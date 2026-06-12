@@ -7,7 +7,7 @@ import {
   deleteUser,
   getUsersByBranch
 } from "../api/usersApi"; // ensure getUsersByBranch is exported
-import axios from "axios";
+import { getBranches } from "../api/branchApi";
 import "./AdminUserPage.css";
 
 export default function AdminUsersPage() {
@@ -89,8 +89,8 @@ export default function AdminUsersPage() {
 
   const loadBranches = async () => {
     try {
-      const res = await axios.get("http://localhost:8081/salon-app/api/branches");
-      setBranches(res.data);
+      const data = await getBranches();
+      setBranches(data);
     } catch (err) { console.error(err); }
   };
 

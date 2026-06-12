@@ -1,15 +1,20 @@
-import axios from 'axios';
-
-const API_URL = "http://localhost:8081/salon-app/api/branches";
-
-const getAuthHeader = () => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    return user && user.token ? { Authorization: `Bearer ${user.token}` } : {};
-};
+import api from "./client";
 
 export const getBranches = async () => {
-    const response = await axios.get(API_URL, {
-        headers: getAuthHeader()
-    });
-    return response.data;
+  const response = await api.get("/branches");
+  return response.data;
+};
+
+export const createBranch = async (branch) => {
+  const response = await api.post("/branches", branch);
+  return response.data;
+};
+
+export const updateBranch = async (id, branch) => {
+  const response = await api.put(`/branches/${id}`, branch);
+  return response.data;
+};
+
+export const deleteBranch = async (id) => {
+  await api.delete(`/branches/${id}`);
 };

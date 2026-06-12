@@ -20,7 +20,6 @@ import CustomerManagement from "./pages/CustomerManagement";
 import TransactionHistory from "./pages/TransactionHistory";
 import ReceptionDashboard from "./pages/ReceptionDashboard";
 import AppointmentManagement from "./pages/AppointmentManagement";
-import TaskManagement from "./pages/TaskManagement";
 import BranchStaffManagement from "./pages/BranchStaffManagement";
 import BranchAppointmentManagement from './pages/BranchAppointmentManagement';
 import SalaryManagement from './pages/SalaryManagement';
