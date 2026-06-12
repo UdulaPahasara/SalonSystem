@@ -1,0 +1,255 @@
+/* Dashboard Layout Container */
+.dashboard-container {
+    display: flex;
+    height: 100vh;
+    background-color: #f4f7f6;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Dashboard Sidebar */
+.dashboard-sidebar {
+    width: 250px;
+    background-color: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.dashboard-sidebar-header {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.dashboard-sidebar-item {
+    display: block;
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    text-align: left;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    color: #555;
+    transition: all 0.2s ease;
+}
+
+.dashboard-sidebar-item:hover {
+    background-color: #f0f0f5;
+    color: #7b2cbf;
+}
+
+.dashboard-sidebar-item.active {
+    background-color: #7b2cbf;
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(123, 44, 191, 0.2);
+}
+
+/* Dashboard Content Area */
+.dashboard-content {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.dashboard-content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.dashboard-content-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    color: #2c3e50;
+}
+
+/* Common Table Styles */
+.dashboard-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+    padding: 15px 20px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.dashboard-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.dashboard-table tr:hover {
+    background-color: #fafafa;
+}
+
+.dashboard-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Button Utilities */
+.btn-primary {
+    padding: 10px 20px;
+    background-color: #7b2cbf;
+    /* Purple theme like User Management */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #9d4edd;
+}
+
+.btn-danger {
+    padding: 6px 12px;
+    background-color: #ffebee;
+    color: #e74c3c;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-danger:hover {
+    background-color: #ffcdd2;
+}
+
+.btn-secondary {
+    padding: 6px 12px;
+    background-color: #ecf0f1;
+    color: #2c3e50;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.btn-secondary:hover {
+    background-color: #dcdde1;
+}
+
+/* Card Summary (for Billing/Product totals) */
+.dashboard-summary-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    border-left: 5px solid #7b2cbf;
+}
+
+/* Form Styles */
+.dashboard-form {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.dashboard-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.dashboard-input:focus {
+    border-color: #7b2cbf;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(123, 44, 191, 0.1);
+}
+
+/* Button Aliases for consistency */
+.dashboard-btn-primary {
+    padding: 10px 20px;
+    background-color: #7b2cbf;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.dashboard-btn-primary:hover {
+    background-color: #9d4edd;
+}
+
+.dashboard-btn-secondary {
+    padding: 6px 12px;
+    background-color: #ecf0f1;
+    color: #2c3e50;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.dashboard-btn-secondary:hover {
+    background-color: #dcdde1;
+}
+
+.dashboard-btn-edit {
+    padding: 6px 12px;
+    background-color: #e0e7ff;
+    color: #4338ca;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.dashboard-btn-edit:hover {
+    background-color: #c7d2fe;
+}
+
+.dashboard-btn-delete {
+    padding: 6px 12px;
+    background-color: #ffebee;
+    color: #e74c3c;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.dashboard-btn-delete:hover {
+    background-color: #ffcdd2;
+}

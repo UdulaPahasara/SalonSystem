@@ -1,0 +1,49 @@
+/* Global Salon Chic Theme */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+
+  /* Global Mesh Gradient Background - Pastel Rose/Lavender/Peach */
+  background: radial-gradient(at 0% 0%, hsla(339, 100%, 94%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(280, 70%, 96%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(350, 100%, 92%, 1) 0, transparent 50%);
+  background-color: #fff0f5;
+  /* Fallback */
+  background-size: 100% 100%;
+  background-attachment: fixed;
+  /* Ensures background stays fixed while scrolling */
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #4a044e;
+  /* Deep dark purple for text */
+}
+
+/* Global Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #f472b6;
+  /* Soft pink scrollbar */
+  border-radius: 10px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Playfair Display', serif;
+  color: #831843;
+  /* Rose Dark */
+}
+
+button {
+  font-family: 'Lato', sans-serif;
+}

@@ -1,0 +1,127 @@
+/* Login.css - Femme Fatale / Salon Chic Theme */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700&display=swap');
+
+.login-page-wrapper {
+    margin: 0;
+    font-family: 'Lato', sans-serif;
+    /* Soft, elegant mesh gradient: Rose, Peach, and Soft Lavender */
+    background: radial-gradient(at 0% 0%, hsla(339, 100%, 94%, 1) 0, transparent 50%),
+        radial-gradient(at 50% 0%, hsla(280, 70%, 96%, 1) 0, transparent 50%),
+        radial-gradient(at 100% 0%, hsla(350, 100%, 92%, 1) 0, transparent 50%);
+    background-color: #fff0f5;
+    background-size: 100% 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+}
+
+.login-container {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(15px);
+    border-radius: 24px;
+    padding: 3.5rem;
+    box-shadow: 0 15px 35px -5px rgba(251, 113, 133, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 420px;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decorative Top Gradient Line */
+.login-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(to right, #f472b6, #c084fc);
+}
+
+.login-container h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: #831843;
+    margin-bottom: 2rem;
+    font-weight: 700;
+}
+
+.login-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.login-container label {
+    text-align: left;
+    font-weight: 600;
+    color: #831843;
+    font-size: 0.95rem;
+    margin-bottom: -0.5rem;
+}
+
+.login-container select,
+.login-container input {
+    padding: 0.9rem 1rem;
+    border: 1px solid #fbcfe8;
+    /* Soft Pink Border */
+    border-radius: 12px;
+    font-size: 1rem;
+    background-color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s;
+    outline: none;
+    color: #4a044e;
+    font-family: 'Lato', sans-serif;
+}
+
+.login-container select:focus,
+.login-container input:focus {
+    border-color: #f472b6;
+    background-color: #fff;
+    box-shadow: 0 0 0 4px rgba(244, 114, 182, 0.15);
+}
+
+.login-container button {
+    margin-top: 1.5rem;
+    padding: 0.9rem;
+    border: none;
+    border-radius: 50px;
+    background-image: linear-gradient(135deg, #f472b6 0%, #e879f9 100%);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 15px rgba(232, 121, 249, 0.4);
+    font-family: 'Lato', sans-serif;
+}
+
+.login-container button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(232, 121, 249, 0.5);
+    background-image: linear-gradient(135deg, #ec4899 0%, #d946ef 100%);
+}
+
+.login-container button:active {
+    transform: translateY(0);
+}
+
+.login-container .home-link {
+    margin-top: 1.8rem;
+    display: block;
+    color: #701a75;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+
+.login-container .home-link:hover {
+    color: #db2777;
+    text-decoration: underline;
+}
