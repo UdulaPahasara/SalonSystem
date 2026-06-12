@@ -48,15 +48,23 @@ Open: **http://localhost:8081/salon-app/**
 
 ## Development
 
-```bash
-# Terminal 1 — API
-./mvnw spring-boot:run
+From the **project root** (no need to `cd frontend`):
 
-# Terminal 2 — React dev server (optional, for UI work)
-cd frontend && npm install && npm start
+```bash
+# Install frontend dependencies
+npm install
+
+# Terminal 1 — API
+npm run start:api
+# or: ./mvnw spring-boot:run
+
+# Terminal 2 — React dev server
+npm run dev
 ```
 
-Dev UI: **http://localhost:3000/salon-app/** (proxies API to port 8081)
+Dev UI: **http://localhost:3000/salon-app/** (API calls proxy to port 8081; UI is served by React)
+
+> **Proxy error?** Start the backend first: `npm run start:api` in a separate terminal.
 
 ## Default users
 
@@ -71,6 +79,7 @@ Dev UI: **http://localhost:3000/salon-app/** (proxies API to port 8081)
 
 ```
 SalonSystem/                    ← one project root
+├── package.json                ← npm scripts (dev, start:api, build)
 ├── pom.xml                     ← builds everything
 ├── mvnw
 ├── build.sh                    ← build script → one JAR

@@ -1,0 +1,15 @@
+{
+  "name": "salon-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Salon Management System — monolithic Spring Boot + React",
+  "scripts": {
+    "postinstall": "npm install --prefix frontend",
+    "dev": "npm run start --prefix frontend",
+    "start": "npm run start --prefix frontend",
+    "start:api": "./mvnw spring-boot:run",
+    "build": "./build.sh",
+    "build:frontend": "npm run build --prefix frontend",
+    "test": "npm run test --prefix frontend"
+  }
+}
