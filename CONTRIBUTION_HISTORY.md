@@ -36,3 +36,6 @@ This file records the project contribution timeline for the Rusiru branch, start
 
 ## 2026-06-12
 - Reviewed the initial repository structure and confirmed project scope.`n- Verified the single-JAR deployment layout and overall app architecture.
+
+## 2026-06-13
+- Documented the frontend/backend workflow for local development.`n- Recorded the project startup, database, and build commands for contributors.
