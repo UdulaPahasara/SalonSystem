@@ -3,6 +3,9 @@
 # Full architecture & structure notes: see ARCHITECTURE.txt in project root
 # =============================================================================
 
+# --- Environment (local secrets — never commit) ---
+.env
+
 # --- Maven / Java build output ---
 # Generated when you run: ./mvnw package or ./build.sh
 # Contains the final JAR — rebuild locally, do not commit
