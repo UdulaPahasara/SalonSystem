@@ -1,0 +1,282 @@
+================================================================================
+  SALON MANAGEMENT SYSTEM — PROJECT ARCHITECTURE & STRUCTURE GUIDE
+================================================================================
+
+Read this file first if you are new to the repo or wondering why folders
+look different from an older version.
+
+
+--------------------------------------------------------------------------------
+1. WHAT THIS PROJECT IS
+--------------------------------------------------------------------------------
+
+A monolithic web app:
+  - Frontend (UI)  = React 18        →  folder: frontend/
+  - Backend (API)  = Spring Boot 3   →  folder: src/main/java/
+  - Database       = MySQL
+
+The browser never talks to MySQL directly. React calls REST APIs; Spring Boot
+handles business logic and database access.
+
+
+--------------------------------------------------------------------------------
+2. BEFORE vs AFTER (WHY THE STRUCTURE CHANGED)
+--------------------------------------------------------------------------------
+
+BEFORE (two separate deploy folders — hard to deploy for small systems):
+
+  SalonSystem/
+  ├── frontend/          ← React project (separate npm app)
+  │   └── package.json
+  └── backend/           ← Spring Boot project (separate Maven app)
+      ├── pom.xml
+      └── src/
+
+  Problems:
+  - Felt like TWO applications
+  - Deploy meant copying TWO directories (or running two servers)
+  - Frontend used hardcoded http://localhost:8081 URLs
+  - CORS needed between port 3000 and 8081
+
+
+AFTER (one project root — one JAR to deploy):
+
+  SalonSystem/                    ← single project root
+  ├── package.json                ← npm shortcuts for local dev only
+  ├── pom.xml                     ← Maven: builds backend + embeds React
+  ├── mvnw / build.sh
+  ├── src/main/java/              ← backend (moved UP from old backend/)
+  ├── src/main/resources/         ← config + generated static UI
+  └── frontend/                   ← React SOURCE only (not deployed alone)
+
+  Benefits:
+  - ONE command builds everything:  ./build.sh
+  - ONE file to deploy:             target/SalonManagementSystem-0.0.1-SNAPSHOT.jar
+  - ONE server in production:       port 8081 serves UI + API together
+
+
+--------------------------------------------------------------------------------
+3. CURRENT FOLDER ROLES
+--------------------------------------------------------------------------------
+
+  frontend/
+    React source code — pages, components, API client (axios).
+    NOT copied to production server by itself.
+    Maven runs "npm run build" and packs output into the JAR.
+
+  src/main/java/
+    Spring Boot backend — controllers, services, repositories, models.
+    REST API lives under:  /salon-app/api/*
+
+  src/main/resources/
+    application.properties  — database URL, port, etc.
+    static/                 — GENERATED React build (gitignored, do not edit)
+
+  pom.xml
+    Maven build file. Triggers frontend build and copies it into the JAR.
+
+  package.json (root)
+    Developer convenience only. Scripts:
+      npm install      → installs frontend dependencies
+      npm run dev      → starts React dev server (port 3000)
+      npm run start:api → starts Spring Boot (port 8081)
+
+
+--------------------------------------------------------------------------------
+4. HOW FRONTEND AND BACKEND WORK TOGETHER
+--------------------------------------------------------------------------------
+
+  Browser  →  React UI  →  REST API  →  Spring Boot  →  MySQL
+
+  Example — user logs in:
+    1. User opens login page (React)
+    2. React POSTs to /salon-app/api/users/login
+    3. Spring Boot validates against MySQL
+    4. Returns user + role JSON
+    5. React saves to localStorage and navigates to dashboard
+
+  API base URL in code (frontend/src/api/client.js):
+    /salon-app/api
+
+  Backend context path (application.properties):
+    server.port=8081
+    server.servlet.context-path=/salon-app
+
+  So full API URL in production:
+    http://your-server:8081/salon-app/api/...
+
+
+--------------------------------------------------------------------------------
+5. DEVELOPMENT vs PRODUCTION
+--------------------------------------------------------------------------------
+
+DEVELOPMENT (two processes — for coding):
+
+  Terminal 1:  npm run start:api     →  Spring Boot on :8081
+  Terminal 2:  npm run dev           →  React on :3000
+
+  Open:  http://localhost:3000/salon-app/
+
+  How requests flow in dev:
+    - UI pages (HTML/JS/CSS)     → served by React dev server (:3000)
+    - API calls (/salon-app/api) → proxied to Spring Boot (:8081)
+      (see frontend/src/setupProxy.js)
+
+  You MUST run both terminals for login and data to work.
+
+
+PRODUCTION (one process — for deployment):
+
+  Build:   ./build.sh
+  Run:     java -jar target/SalonManagementSystem-0.0.1-SNAPSHOT.jar
+  Open:    http://localhost:8081/salon-app/
+
+  How requests flow in production:
+    - UI at /salon-app/          → static files inside JAR
+    - API at /salon-app/api/*    → Spring Boot controllers
+    - No Node.js, no port 3000, no separate frontend folder on server
+
+
+--------------------------------------------------------------------------------
+6. WHAT TO DEPLOY (AND WHAT NOT TO)
+--------------------------------------------------------------------------------
+
+  DEPLOY THIS:
+    target/SalonManagementSystem-0.0.1-SNAPSHOT.jar   (one file)
+
+  DO NOT DEPLOY SEPARATELY:
+    frontend/          — source only, compiled into JAR
+    frontend/node_modules/
+    frontend/build/
+    src/               — already compiled into JAR
+    target/            — build output folder on your machine
+
+
+--------------------------------------------------------------------------------
+7. .gitignore — WHAT IS IGNORED AND WHY
+--------------------------------------------------------------------------------
+
+  target/
+    Maven build output including the JAR. Rebuilt with ./build.sh.
+
+  frontend/node_modules/
+    npm dependencies. Reinstalled with: npm install
+
+  frontend/build/
+    React production build. Recreated by npm run build or Maven.
+
+  src/main/resources/static/
+    Copy of frontend/build placed here by Maven before JAR packaging.
+    Never edit manually — always regenerated on build.
+
+  node_modules/ (root)
+    If present from root npm install helper scripts.
+
+  SalonManagementSystem/
+  SalonMagementSystemFrontEnd/
+    OLD duplicate copies from before the monolith merge.
+    Each had its own nested .git repo. Not used — safe to delete locally.
+    Kept in .gitignore so they are never committed by mistake.
+
+  IDE folders (.idea, .vscode, etc.)
+    Personal editor settings — not shared via git.
+
+
+--------------------------------------------------------------------------------
+8. DATABASE & CREDENTIALS (TWO DIFFERENT THINGS)
+--------------------------------------------------------------------------------
+
+  A) MYSQL SERVER CREDENTIALS  →  src/main/resources/application.properties
+     These connect Spring Boot TO MySQL (database server login).
+     Defaults: host localhost, database SalonMangement, user root, password root.
+
+     Override on another PC without editing files:
+       export DB_HOST=localhost
+       export DB_PORT=3306
+       export DB_NAME=SalonMangement
+       export DB_USERNAME=your_mysql_user
+       export DB_PASSWORD=your_mysql_password
+
+  B) APP LOGIN USERS  →  DataSeeder.java (runs on every startup, creates if missing)
+     These are salon staff accounts for the React login screen.
+     Stored IN the database after first successful backend start.
+     NOT read from application.properties.
+
+     Default users created automatically:
+       admin     / admin     → Owner
+       manager   / manager   → Branch Manager
+       reception / reception → Reception
+       pm        / pm        → Product Manager
+       cashier   / cashier   → Cashier (UI shows role as "Chashire")
+
+  Login flow:
+    React Login page → POST /salon-app/api/users/login
+    → UserService.authenticate() checks MySQL users table
+    → Password compared with BCrypt hash from DataSeeder
+
+
+--------------------------------------------------------------------------------
+9. DATABASE AUTO-CREATION (WHAT HAPPENS ON FIRST RUN)
+--------------------------------------------------------------------------------
+
+  Another developer needs:
+    ✓ MySQL installed and running (service started)
+    ✓ Correct DB_USERNAME / DB_PASSWORD for their MySQL
+    ✗ Does NOT need to run CREATE DATABASE manually
+
+  On first startup Spring Boot + JPA will:
+    1. Connect to MySQL
+    2. Create database "SalonMangement" if it does not exist
+       (createDatabaseIfNotExist=true in JDBC URL)
+    3. Create/update all tables (spring.jpa.hibernate.ddl-auto=update)
+    4. DataSeeder inserts default roles, branch, users, sample staff
+
+  If startup fails with "Communications link failure":
+    → MySQL is not running, or wrong host/port.
+
+  If startup fails with "Access denied":
+    → Wrong DB_USERNAME / DB_PASSWORD for that machine.
+
+
+--------------------------------------------------------------------------------
+10. DEFAULT TEST USERS (seeded on first backend run)
+--------------------------------------------------------------------------------
+
+  admin     / admin     → Owner
+  manager   / manager   → Branch Manager
+  reception / reception → Reception
+  pm        / pm        → Product Manager
+  cashier   / cashier   → Cashier
+
+
+--------------------------------------------------------------------------------
+11. QUICK REFERENCE COMMANDS
+--------------------------------------------------------------------------------
+
+  First time setup:
+    npm install
+    Ensure MySQL is running (database + tables auto-create on first start)
+    Set DB_USERNAME / DB_PASSWORD env vars if not using root/root
+
+  Local development:
+    npm run start:api    # terminal 1
+    npm run dev          # terminal 2
+
+  Production build:
+    ./build.sh
+
+  Run production JAR:
+    java -jar target/SalonManagementSystem-0.0.1-SNAPSHOT.jar
+
+
+--------------------------------------------------------------------------------
+12. SUMMARY IN ONE SENTENCE
+--------------------------------------------------------------------------------
+
+  frontend/ is UI source, src/ is API source, Maven merges them into ONE JAR
+  so you deploy one file instead of two separate frontend and backend folders.
+
+
+================================================================================
+  Last updated: monolith merge — Spring Boot serves React from same JAR
+================================================================================

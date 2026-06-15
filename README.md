@@ -2,6 +2,8 @@
 
 One project. One JAR. No separate frontend deploy.
 
+> **New to this repo?** Read **[ARCHITECTURE.txt](./ARCHITECTURE.txt)** for a full explanation of the folder structure, why `backend/` was removed, dev vs production, and what `.gitignore` excludes.
+
 Spring Boot serves both the React UI and REST API from a single executable JAR.
 
 ## What you deploy
@@ -23,11 +25,37 @@ Copy **one JAR file** to your server and run it. Maven builds the React app and 
 
 ### Database
 
-```sql
-CREATE DATABASE SalonMangement;
+**Requirements:** MySQL must be **installed and running**. You do **not** need to create the database manually — the app creates it on first start.
+
+Default MySQL connection (override with env vars if needed):
+
+| Setting | Default | Env variable |
+|---------|---------|--------------|
+| Host | localhost | `DB_HOST` |
+| Port | 3306 | `DB_PORT` |
+| Database | SalonMangement | `DB_NAME` |
+| MySQL user | root | `DB_USERNAME` |
+| MySQL password | root | `DB_PASSWORD` |
+
+Example for another machine:
+
+```bash
+export DB_USERNAME=myuser
+export DB_PASSWORD=mypassword
+npm run start:api
 ```
 
-Update `src/main/resources/application.properties` if your MySQL credentials differ (default: `root` / `root`).
+**App login users** (for the UI) are **not** in `application.properties`. They are auto-created in the database by `DataSeeder.java` on first run:
+
+| Username | Password | Role |
+|----------|----------|------|
+| admin | admin | Owner |
+| manager | manager | Branch Manager |
+| reception | reception | Reception |
+| pm | pm | Product Manager |
+| cashier | cashier | Cashier (select "Chashire" on login) |
+
+See **ARCHITECTURE.txt** section 11 for full database & credentials details.
 
 ### Build
 
@@ -74,6 +102,7 @@ Dev UI: **http://localhost:3000/salon-app/** (API calls proxy to port 8081; UI i
 | manager   | manager   | Branch Manager |
 | reception | reception | Reception      |
 | cashier   | cashier   | Cashier        |
+| pm        | pm        | Product Manager |
 
 ## Project structure (single directory)
 
