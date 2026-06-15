@@ -1,61 +1,47 @@
-import React, { useState } from 'react';
-import './Login.css';
-import axios from "axios";
+import React, { useState } from "react";
+import "./Login.css";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from '../context/AuthContext';  // Add this import
+import { useAuth } from "../context/AuthContext";
+import { login } from "../api/usersApi";
 
 function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [jobRole, setJobRole] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [jobRole, setJobRole] = useState("");
   const navigate = useNavigate();
-  const { login } = useAuth();  // Add this line
+  const { login: setAuthUser } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Map UI 'Chashire' to backend 'Cashier' if selected, otherwise keep as is
     const roleToSend = jobRole === "Chashire" ? "Cashier" : jobRole;
 
     const loginData = {
-      username: username,
-      password: password,
+      username,
+      password,
       role: {
-        roleName: roleToSend
-      }
+        roleName: roleToSend,
+      },
     };
 
     try {
-      const response = await axios.post(
-        "http://localhost:8081/salon-app/api/users/login",
-        loginData
-      );
+      const response = await login(loginData);
 
       alert("Login successful!");
+      setAuthUser(response);
+      console.log("Logged in user:", response);
 
-      // Store user data in context
-      login(response.data);
-
-      console.log("Logged in user:", response.data);
-
-      // Redirect based on role
-      if (response.data.role.roleName === "Owner") {
+      if (response.role.roleName === "Owner") {
         navigate("/admin-dashboard");
-      }
-      else if (response.data.role.roleName === "Branch Manager") {
+      } else if (response.role.roleName === "Branch Manager") {
         navigate("/branch-dashboard");
-      }
-      else if (response.data.role.roleName === "Reception") {
+      } else if (response.role.roleName === "Reception") {
         navigate("/reception-dashboard");
-      }
-      else if (response.data.role.roleName === "Product Manager") {
+      } else if (response.role.roleName === "Product Manager") {
         navigate("/pm-dashboard");
-      }
-      // Backend returns 'Cashier', but we also handle 'Chashire' just in case
-      else if (response.data.role.roleName === "Cashier" || response.data.role.roleName === "Chashire") {
+      } else if (response.role.roleName === "Cashier" || response.role.roleName === "Chashire") {
         navigate("/cashier");
       }
-
     } catch (error) {
       console.error("Login error:", error);
       alert("Invalid username, password or role!");
@@ -67,11 +53,10 @@ function Login() {
       <div className="login-container">
         <form onSubmit={handleSubmit}>
           <label htmlFor="jobRole">Job Role</label>
-          {/* ... form content ... */}
           <select
             id="jobRole"
             value={jobRole}
-            onChange={e => setJobRole(e.target.value)}
+            onChange={(e) => setJobRole(e.target.value)}
             required
           >
             <option value="">Select your job role</option>
@@ -80,7 +65,8 @@ function Login() {
             <option value="Reception">Reception</option>
             <option value="Product Manager">Product Manager</option>
             <option value="Chashire">Chashire</option>
-          </select><br />
+          </select>
+          <br />
 
           <label htmlFor="username">Username</label>
           <input
@@ -89,7 +75,8 @@ function Login() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-          /><br />
+          />
+          <br />
 
           <label htmlFor="password">Password</label>
           <input
@@ -98,7 +85,8 @@ function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-          /><br />
+          />
+          <br />
 
           <button type="submit">Login</button>
         </form>

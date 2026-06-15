@@ -1,34 +1,23 @@
-import axios from "axios";
+import api from "./client";
 
-const BASE = "http://localhost:8081/salon-app/api";
+export const createStockRequest = (data) => api.post("/stock-requests", data);
 
-// Named exports
-export const createStockRequest = (data) => {
-  return axios.post(`${BASE}/stock-requests`, data);
-};
+export const getStockRequestsByBranch = (branchId) =>
+  api.get(`/stock-requests/branch/${branchId}`);
 
-export const getStockRequestsByBranch = (branchId) => {
-  return axios.get(`${BASE}/stock-requests/branch/${branchId}`);
-};
+export const getAllStockRequests = () => api.get("/stock-requests");
 
-export const getAllStockRequests = () => {
-  return axios.get(`${BASE}/stock-requests`);
-};
+export const approveStockRequest = (id) =>
+  api.put(`/stock-requests/${id}/approve`);
 
-export const approveStockRequest = (id) => {
-  return axios.put(`${BASE}/stock-requests/${id}/approve`);
-};
+export const rejectStockRequest = (id) =>
+  api.put(`/stock-requests/${id}/reject`);
 
-export const rejectStockRequest = (id) => {
-  return axios.put(`${BASE}/stock-requests/${id}/reject`);
-};
-
-// Default export (optional)
 const stockRequestApi = {
   createStockRequest,
   getStockRequestsByBranch,
   approveStockRequest,
-  rejectStockRequest
+  rejectStockRequest,
 };
 
 export default stockRequestApi;

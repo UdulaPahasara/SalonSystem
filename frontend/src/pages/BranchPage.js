@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { getBranches, createBranch, updateBranch, deleteBranch } from "../api/branchApi";
 import { useNavigate } from "react-router-dom";
 import "../components/DashboardLayout.css";
 
@@ -17,8 +17,8 @@ export default function BranchPage() {
 
   const loadBranches = async () => {
     try {
-      const res = await axios.get("http://localhost:8081/salon-app/api/branches");
-      setBranches(res.data);
+      const data = await getBranches();
+      setBranches(data);
     } catch (err) {
       console.error(err);
     }
@@ -29,28 +29,17 @@ export default function BranchPage() {
 
     try {
       if (editingId) {
-        // Update
-        await axios.put(`http://localhost:8081/salon-app/api/branches/${editingId}`, {
-          branchName,
-          address,
-          phone
-        });
+        await updateBranch(editingId, { branchName, address, phone });
         alert("Branch updated");
         setEditingId(null);
       } else {
-        // Create
-        await axios.post("http://localhost:8081/salon-app/api/branches", {
-          branchName,
-          address,
-          phone
-        });
+        await createBranch({ branchName, address, phone });
         alert("Branch added");
       }
 
       setBranchName("");
       setAddress("");
       setPhone("");
-
       loadBranches();
     } catch (err) {
       alert("Error saving branch");
@@ -60,7 +49,7 @@ export default function BranchPage() {
 
   const remove = async (id) => {
     if (window.confirm("Are you sure?")) {
-      await axios.delete(`http://localhost:8081/salon-app/api/branches/${id}`);
+      await deleteBranch(id);
       loadBranches();
     }
   };
@@ -81,7 +70,6 @@ export default function BranchPage() {
 
   return (
     <div className="dashboard-container">
-      {/* CONTENT */}
       <div className="dashboard-content">
         <div className="dashboard-content-header">
           <h2>Branch Management</h2>
@@ -90,12 +78,10 @@ export default function BranchPage() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: '30px', alignItems: 'flex-start' }}>
-
-          {/* Left Side: Form */}
-          <div style={{ flex: '0 0 350px' }}>
+        <div style={{ display: "flex", gap: "30px", alignItems: "flex-start" }}>
+          <div style={{ flex: "0 0 350px" }}>
             <form onSubmit={submit} className="dashboard-form">
-              <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#555' }}>
+              <h3 style={{ marginTop: 0, marginBottom: "20px", color: "#555" }}>
                 {editingId ? "Edit Branch" : "Add Branch"}
               </h3>
 
@@ -105,7 +91,7 @@ export default function BranchPage() {
                   className="dashboard-input"
                   placeholder="e.g. Colombo Branch"
                   value={branchName}
-                  onChange={e => setBranchName(e.target.value)}
+                  onChange={(e) => setBranchName(e.target.value)}
                   required
                 />
               </div>
@@ -116,7 +102,7 @@ export default function BranchPage() {
                   className="dashboard-input"
                   placeholder="Address"
                   value={address}
-                  onChange={e => setAddress(e.target.value)}
+                  onChange={(e) => setAddress(e.target.value)}
                 />
               </div>
 
@@ -126,12 +112,12 @@ export default function BranchPage() {
                   className="dashboard-input"
                   placeholder="Phone Number"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
 
-              <div style={{ marginTop: '15px' }}>
-                <button type="submit" className="dashboard-btn-primary" style={{ width: '100%' }}>
+              <div style={{ marginTop: "15px" }}>
+                <button type="submit" className="dashboard-btn-primary" style={{ width: "100%" }}>
                   {editingId ? "Update Branch" : "Add Branch"}
                 </button>
                 {editingId && (
@@ -139,7 +125,7 @@ export default function BranchPage() {
                     type="button"
                     onClick={cancelEdit}
                     className="dashboard-btn-secondary"
-                    style={{ marginTop: '10px', width: '100%' }}
+                    style={{ marginTop: "10px", width: "100%" }}
                   >
                     Cancel
                   </button>
@@ -148,7 +134,6 @@ export default function BranchPage() {
             </form>
           </div>
 
-          {/* Right Side: Table */}
           <div style={{ flex: 1 }}>
             <table className="dashboard-table">
               <thead>
@@ -161,27 +146,32 @@ export default function BranchPage() {
                 </tr>
               </thead>
               <tbody>
-                {branches.map(b => (
+                {branches.map((b) => (
                   <tr key={b.id}>
                     <td>{b.id}</td>
                     <td>{b.branchName}</td>
                     <td>{b.address}</td>
                     <td>{b.phone}</td>
                     <td>
-                      <button onClick={() => edit(b)} className="dashboard-btn-edit" style={{ marginRight: 5 }}>Edit</button>
-                      <button onClick={() => remove(b.id)} className="dashboard-btn-delete">Delete</button>
+                      <button onClick={() => edit(b)} className="dashboard-btn-edit" style={{ marginRight: 5 }}>
+                        Edit
+                      </button>
+                      <button onClick={() => remove(b.id)} className="dashboard-btn-delete">
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
                 {branches.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="text-center">No branches found.</td>
+                    <td colSpan="5" className="text-center">
+                      No branches found.
+                    </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-
         </div>
       </div>
     </div>

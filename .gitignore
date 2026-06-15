@@ -1,0 +1,47 @@
+# =============================================================================
+# Salon Management System — .gitignore
+# Full architecture & structure notes: see ARCHITECTURE.txt in project root
+# =============================================================================
+
+# --- Maven / Java build output ---
+# Generated when you run: ./mvnw package or ./build.sh
+# Contains the final JAR — rebuild locally, do not commit
+target/
+
+# Maven wrapper jar (downloaded automatically by mvnw)
+.mvn/wrapper/maven-wrapper.jar
+
+HELP.md
+
+# --- React frontend (source lives in frontend/, built by Maven) ---
+# Dependencies — reinstall with: npm install (from project root)
+frontend/node_modules/
+
+# Production build output — recreated by npm run build or Maven package
+frontend/build/
+
+# --- Embedded UI inside Spring Boot JAR ---
+# Maven copies frontend/build here before packaging — always generated, never commit
+src/main/resources/static/
+
+# --- Root npm helper (dev only) ---
+# Root package.json only has scripts; lockfile is optional
+node_modules/
+
+# --- IDE / editor ---
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# --- OS ---
+.DS_Store
+
+# --- Legacy duplicate folders (OLD split-project copies — do not use) ---
+# Before monolith merge we had separate frontend/ + backend/ folders.
+# These nested copies are leftover duplicates with their own .git repos.
+# Active code is at project root (src/, frontend/) — ignore these entirely.
+SalonManagementSystem/
+SalonMagementSystemFrontEnd/
