@@ -39,3 +39,6 @@ This file records the project contribution timeline for the Rusiru branch, start
 
 ## 2026-06-13
 - Documented the frontend/backend workflow for local development.`n- Recorded the project startup, database, and build commands for contributors.
+
+## 2026-06-15
+- Summarized the repo structure and contribution context.`n- Added a branch-level contribution overview to help track project work.
