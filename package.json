@@ -7,7 +7,7 @@
     "postinstall": "npm install --prefix frontend",
     "dev": "npm run start --prefix frontend",
     "start": "npm run start --prefix frontend",
-    "start:api": "./mvnw spring-boot:run",
+    "start:api": "sh -c 'set -a; [ -f .env ] && . ./.env; set +a; ./mvnw spring-boot:run -DskipTests -Dskip.frontend.build=true'",
     "build": "./build.sh",
     "build:frontend": "npm run build --prefix frontend",
     "test": "npm run test --prefix frontend"
