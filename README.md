@@ -74,6 +74,26 @@ java -jar target/SalonManagementSystem-0.0.1-SNAPSHOT.jar
 
 Open: **http://localhost:8081/salon-app/**
 
+## Public customer website
+
+Customers can browse the salon without logging in. The public site uses **Lumière Salon** branding (women's salon).
+
+| Page | URL |
+|------|-----|
+| Home | `/salon-app/` |
+| Services & prices (by category) | `/salon-app/services` |
+| About Us | `/salon-app/about` |
+| Contact Us | `/salon-app/contact` |
+| Privacy Policy | `/salon-app/privacy-policy` |
+| Terms of Service | `/salon-app/terms-of-service` |
+| Refund Policy | `/salon-app/refund-policy` |
+| Cancellation Policy | `/salon-app/cancellation-policy` |
+| Staff login | `/salon-app/login` |
+
+**Services page:** Loads prices from `GET /salon-app/api/services`, grouped by category (Hair Care, Skin & Facials, Nails, Bridal & Occasions, Spa & Wellness). On first backend run, `DataSeeder` inserts sample services if the table is empty. Branch managers can add or edit services (with category) under **Branch Services** in the staff dashboard.
+
+**Dev UI:** `http://localhost:3000/salon-app/` — same routes as production.
+
 ## Development
 
 From the **project root** (no need to `cd frontend`):
@@ -82,6 +102,10 @@ From the **project root** (no need to `cd frontend`):
 # Install frontend dependencies
 npm install
 
+# Option A — both API + React in one command
+npm run dev:all
+
+# Option B — two terminals
 # Terminal 1 — API
 npm run start:api
 # or: ./mvnw spring-boot:run

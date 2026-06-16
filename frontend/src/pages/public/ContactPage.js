@@ -1,6 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
+
+const INITIAL_FORM = { name: "", email: "", phone: "", message: "" };
 
 export default function ContactPage() {
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSubmitted(true);
+    setForm(INITIAL_FORM);
+  };
+
   return (
     <div className="public-page">
       <section className="public-page-hero">
@@ -34,24 +50,58 @@ export default function ContactPage() {
 
       <section className="public-form-section">
         <h3>Send us a message</h3>
-        <form className="public-contact-form" onSubmit={(e) => e.preventDefault()}>
+        {submitted && (
+          <p className="public-form-success" role="status">
+            Thank you! We received your message and will get back to you soon.
+          </p>
+        )}
+        <form className="public-contact-form" onSubmit={handleSubmit}>
           <label>
             Full Name
-            <input type="text" placeholder="Your name" required />
+            <input
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="Your name"
+              required
+            />
           </label>
           <label>
             Email
-            <input type="email" placeholder="you@email.com" required />
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="you@email.com"
+              required
+            />
           </label>
           <label>
             Phone
-            <input type="tel" placeholder="+94..." />
+            <input
+              type="tel"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="+94..."
+            />
           </label>
           <label>
             Message
-            <textarea rows="4" placeholder="How can we help you?" required />
+            <textarea
+              name="message"
+              rows="4"
+              value={form.message}
+              onChange={handleChange}
+              placeholder="How can we help you?"
+              required
+            />
           </label>
-          <button type="submit" className="public-btn public-btn-primary">Send Message</button>
+          <button type="submit" className="public-btn public-btn-primary">
+            Send Message
+          </button>
         </form>
       </section>
     </div>

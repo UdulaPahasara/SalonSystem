@@ -270,7 +270,40 @@ PRODUCTION (one process — for deployment):
 
 
 --------------------------------------------------------------------------------
-12. SUMMARY IN ONE SENTENCE
+12. PUBLIC CUSTOMER WEBSITE (Lumière Salon)
+--------------------------------------------------------------------------------
+
+  The React app includes a public-facing site for customers (no login required).
+  Staff dashboards and POS remain behind /login.
+
+  Public routes (under /salon-app/):
+    /                      Home — hero, features, links to services
+    /services              Services & prices grouped by category
+    /about                   About Us
+    /contact                 Contact Us (address, hours, message form)
+    /privacy-policy          Privacy Policy
+    /terms-of-service        Terms of Service
+    /refund-policy           Refund Policy
+    /cancellation-policy     Cancellation Policy
+    /login                   Staff login (not wrapped in public header/footer layout)
+
+  Frontend files:
+    frontend/src/components/public/   PublicLayout, header, footer
+    frontend/src/pages/public/        Services, About, Contact, policy pages
+    frontend/src/pages/Home.js        Landing page
+    frontend/src/styles/PublicSite.css
+
+  Services API (public read):
+    GET /salon-app/api/services              All services (price list)
+    GET /salon-app/api/services/branch/{id}  Branch-specific services
+
+  DataSeeder seeds 12 sample services with categories on first run if the
+  salon_services table is empty. Branch managers maintain the live menu via
+  Branch Service Management (category field included).
+
+
+--------------------------------------------------------------------------------
+13. SUMMARY IN ONE SENTENCE
 --------------------------------------------------------------------------------
 
   frontend/ is UI source, src/ is API source, Maven merges them into ONE JAR
@@ -278,5 +311,5 @@ PRODUCTION (one process — for deployment):
 
 
 ================================================================================
-  Last updated: monolith merge — Spring Boot serves React from same JAR
+  Last updated: monolith merge + public customer website (Lumière Salon)
 ================================================================================

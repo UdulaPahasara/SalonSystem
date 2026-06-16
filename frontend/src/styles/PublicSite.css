@@ -419,6 +419,17 @@
   font-size: 1rem;
 }
 
+.public-form-success {
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  max-width: 560px;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  border-radius: 12px;
+  color: #065f46;
+  font-weight: 500;
+}
+
 .policy-content {
   background: rgba(255, 255, 255, 0.8);
   border: 1px solid #fbcfe8;
