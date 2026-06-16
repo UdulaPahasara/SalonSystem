@@ -6,11 +6,16 @@ import {
   updateUser,
   deleteUser,
   getUsersByBranch
-} from "../api/usersApi"; // ensure getUsersByBranch is exported
+} from "../api/usersApi";
 import { getBranches } from "../api/branchApi";
+import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
+import { getRoleDisplayName } from "../utils/authRoutes";
 import "./AdminUserPage.css";
 
 export default function AdminUsersPage() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -56,17 +61,9 @@ export default function AdminUsersPage() {
   const loadRoles = async () => {
     try {
       const r = await getRoles();
-      // Define the exact order and allowed roles (User requested 'Chashire')
-      const ALLOWED_AND_ORDERED = ["Owner", "Branch Manager", "Product Manager", "Reception", "Chashire"];
+      const ALLOWED_AND_ORDERED = ["Owner", "Branch Manager", "Product Manager", "Reception", "Cashier"];
 
-      // Map backend 'Cashier' to UI 'Chashire'
-      const mappedRoles = r.map(role => ({
-        ...role,
-        roleName: role.roleName === 'Cashier' ? 'Chashire' : role.roleName
-      }));
-
-      // Filter roles to only include those in the allowed list
-      const filtered = mappedRoles.filter(role => ALLOWED_AND_ORDERED.includes(role.roleName));
+      const filtered = r.filter(role => ALLOWED_AND_ORDERED.includes(role.roleName));
 
       // Deduplicate roles by name (in case both 'Cashier' and 'Chashire' existing in DB resulted in duplicates here)
       const uniqueRoles = [];
@@ -124,14 +121,15 @@ export default function AdminUsersPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
+    const ok = await confirm("Delete this user? This cannot be undone.", { title: "Delete user", danger: true, confirmLabel: "Delete" });
+    if (!ok) return;
     try {
       await deleteUser(id);
+      toast.success("User deleted.");
       loadUsers();
     } catch (err) {
-      // Show the backend error message if available (e.g. "Cannot delete user...")
       const msg = err.response?.data || err.message;
-      alert("Operation failed: " + msg);
+      toast.error("Operation failed: " + msg);
     }
   };
 
@@ -148,15 +146,15 @@ export default function AdminUsersPage() {
     try {
       if (editingUser) {
         await updateUser(editingUser.id, payload);
-        alert("User updated");
+        toast.success("User updated.");
       } else {
         await createUser(payload);
-        alert("User created");
+        toast.success("User created.");
       }
       closeModal();
       loadUsers();
     } catch (err) {
-      alert("Operation failed: " + err.message);
+      toast.error("Operation failed: " + err.message);
     }
   };
 
@@ -213,16 +211,12 @@ export default function AdminUsersPage() {
 
         <div className="users-grid">
           {users
-            .map(u => ({
-              ...u,
-              roleName: (u.roleName === 'Cashier' || u.roleName === 'Cashire') ? 'Chashire' : u.roleName
-            }))
-            .filter(u => selectedRole === 'All' || u.roleName === selectedRole)
+            .filter(u => selectedRole === 'All' || getRoleDisplayName(u.roleName) === selectedRole || u.roleName === selectedRole)
             .map(u => (
               <div key={u.id} className="user-card">
                 <div className="card-header">
                   <div style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{u.fullName || u.username}</div>
-                  <span className="role-badge">{u.roleName}</span>
+                  <span className="role-badge">{getRoleDisplayName(u.roleName)}</span>
                 </div>
                 <div className="card-details">
                   <p><strong>Username:</strong> {u.username}</p>

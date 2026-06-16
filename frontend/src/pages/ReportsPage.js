@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getTopProducts, getTopServices } from "../api/usersApi";
+import PageHeader from "../components/staff/PageHeader";
+import { getStaffHomePath } from "../utils/staffNav";
 import "../components/DashboardLayout.css";
 
 export default function ReportsPage() {
-  const navigate = useNavigate();
   const { branchId, userRole } = useAuth();
   const [topProducts, setTopProducts] = useState([]);
   const [topServices, setTopServices] = useState([]);
@@ -24,17 +24,11 @@ export default function ReportsPage() {
       .finally(() => setLoading(false));
   }, [reportBranchId]);
 
-  const backPath = userRole === "Owner" ? "/admin-dashboard" : "/branch-dashboard";
+  const backPath = getStaffHomePath(userRole);
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-content">
-        <div className="dashboard-content-header">
-          <h2>Reports & Analytics</h2>
-          <button className="dashboard-btn-secondary" onClick={() => navigate(backPath)}>
-            ← Back to Dashboard
-          </button>
-        </div>
+    <div className="staff-page">
+      <PageHeader title="Reports & Analytics" subtitle="Top products and services by revenue." backTo={backPath} />
 
         {loading ? (
           <p>Loading reports...</p>
@@ -81,7 +75,6 @@ export default function ReportsPage() {
             </table>
           </>
         )}
-      </div>
     </div>
   );
 }

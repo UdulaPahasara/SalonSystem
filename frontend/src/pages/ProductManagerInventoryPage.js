@@ -5,6 +5,7 @@ import {
 } from "../api/productApi";
 import { createStockRequest } from "../api/stockRequestApi";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 console.log("🚀 ProductManagerInventoryPage MODULE LOADED");
 
@@ -12,6 +13,7 @@ export default function ProductManagerInventoryPage() {
   console.log("🎯 ProductManagerInventoryPage RENDERED - WORKING!");
   
   const { user, userId } = useAuth();
+  const toast = useToast();
 
   const [products, setProducts] = useState([]);
   const [inventory, setInventory] = useState([]);
@@ -34,7 +36,7 @@ export default function ProductManagerInventoryPage() {
       setProducts(data);
     } catch (err) {
       console.error(err);
-      alert("Failed to load products");
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -48,14 +50,14 @@ export default function ProductManagerInventoryPage() {
       setInventory(data);
     } catch (err) {
       console.error(err);
-      alert("Failed to load inventory");
+      toast.error("Failed to load inventory");
     }
   };
 
   /* ---------------- SEND STOCK REQUEST ---------------- */
   const sendStockRequest = async (branchId) => {
     if (!requestQty[branchId] || requestQty[branchId] <= 0) {
-      alert("Enter valid quantity");
+      toast.error("Enter valid quantity");
       return;
     }
 
@@ -67,11 +69,11 @@ export default function ProductManagerInventoryPage() {
         requestedBy: userId
       });
 
-      alert("Stock request sent!");
+      toast.success("Stock request sent!");
       setRequestQty((prev) => ({ ...prev, [branchId]: "" }));
     } catch (err) {
       console.error(err);
-      alert("Failed to send stock request");
+      toast.error("Failed to send stock request");
     }
   };
 

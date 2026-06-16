@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { deleteContactMessage, getContactMessages } from "../api/contactApi";
+import { useConfirm } from "../context/ConfirmContext";
+import PageHeader from "../components/staff/PageHeader";
 import "../components/DashboardLayout.css";
 
 function formatDate(value) {
@@ -9,7 +10,7 @@ function formatDate(value) {
 }
 
 export default function ContactMessagesPage() {
-  const navigate = useNavigate();
+  const confirm = useConfirm();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +31,8 @@ export default function ContactMessagesPage() {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this message?")) return;
+    const ok = await confirm("Delete this message?", { title: "Delete message", danger: true, confirmLabel: "Delete" });
+    if (!ok) return;
     await deleteContactMessage(id);
     loadMessages();
   };
@@ -38,12 +40,7 @@ export default function ContactMessagesPage() {
   return (
     <div className="dashboard-container">
       <div className="dashboard-content">
-        <div className="dashboard-content-header">
-          <h2>Website Contact Messages</h2>
-          <button className="dashboard-btn-secondary" onClick={() => navigate("/reception-dashboard")}>
-            ← Back to Reception Dashboard
-          </button>
-        </div>
+        <PageHeader title="Website Contact Messages" backTo="/reception-dashboard" />
 
         {loading ? (
           <p>Loading messages...</p>

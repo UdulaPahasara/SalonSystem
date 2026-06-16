@@ -3,10 +3,14 @@ import { getAllAppointments, createAppointment, updateAppointment, deleteAppoint
 import { getAllCustomers } from "../api/customerApi";
 import { getServicesByBranch } from "../api/serviceApi";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
 import "./AppointmentManagement.css";
 
 function AppointmentManagement() {
     const { branchId } = useAuth();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [appointments, setAppointments] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [services, setServices] = useState([]);
@@ -56,7 +60,7 @@ function AppointmentManagement() {
                     ...newAppt,
                     appointmentTime // Send combined ISO string
                 });
-                alert("Appointment updated!");
+                toast.success("Appointment updated!");
                 setEditingAppt(null);
             } else {
                 await createAppointment({
@@ -66,12 +70,12 @@ function AppointmentManagement() {
                     branchId, // Pass the branchId
                     applyLoyalty: newAppt.applyLoyalty
                 });
-                alert("Appointment booked!");
+                toast.success("Appointment booked!");
             }
             setNewAppt({ customerId: "", serviceType: "", date: "", time: "", applyLoyalty: false });
             loadData();
         } catch (error) {
-            alert("Operation failed: " + (error.response?.data || error.message));
+            toast.error("Operation failed: " + (error.response?.data || error.message));
         }
     };
 
@@ -96,13 +100,14 @@ function AppointmentManagement() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Cancel this appointment?")) return;
+        const ok = await confirm("Cancel this appointment?", { title: "Cancel appointment", danger: true, confirmLabel: "Cancel" });
+        if (!ok) return;
         try {
             await deleteAppointment(id);
-            alert("Appointment cancelled.");
+            toast.success("Appointment cancelled.");
             loadData();
         } catch (error) {
-            alert("Failed to cancel: " + (error.response?.data || error.message));
+            toast.error("Failed to cancel: " + (error.response?.data || error.message));
         }
     };
 

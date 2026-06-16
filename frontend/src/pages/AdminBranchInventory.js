@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getBranches } from "../api/branchApi";
 import { getInventoryByBranch } from "../api/productApi";
+import { useToast } from "../context/ToastContext";
 import "../components/DashboardLayout.css";
 
 export default function AdminBranchInventory() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [branches, setBranches] = useState([]);
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [inventory, setInventory] = useState([]);
@@ -39,7 +41,7 @@ export default function AdminBranchInventory() {
       setInventory(data);
     } catch (err) {
       console.error("Failed to load inventory", err);
-      alert("Error loading inventory for this branch");
+      toast.error("Error loading inventory for this branch");
     } finally {
       setLoading(false);
     }

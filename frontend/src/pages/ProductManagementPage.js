@@ -10,11 +10,15 @@ import {
 } from "../api/productApi";
 import { createStockRequest } from "../api/stockRequestApi";
 import { useAuth } from "../context/AuthContext";  // Import AuthContext
+import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
 
 export default function ProductManagementPage() {
   
   /* -------------------- AUTH CONTEXT -------------------- */
   const { user, userId, userRole } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   /* -------------------- STATE -------------------- */
 
@@ -61,7 +65,7 @@ export default function ProductManagementPage() {
       console.log("Loaded products:", data.length);
     } catch (error) {
       console.error("Error loading products:", error);
-      alert("Failed to load products");
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -82,17 +86,17 @@ export default function ProductManagementPage() {
     try {
       if (editingId) {
         await updateProduct(editingId, payload);
-        alert("Product updated successfully!");
+        toast.success("Product updated successfully!");
       } else {
         await createProduct(payload);
-        alert("Product created successfully!");
+        toast.success("Product created successfully!");
       }
 
       resetForm();
       loadProducts();
     } catch (error) {
       console.error("Error saving product:", error);
-      alert("Failed to save product");
+      toast.error("Failed to save product");
     }
   };
 
@@ -117,15 +121,15 @@ export default function ProductManagementPage() {
   };
 
   const removeProduct = async (id) => {
-    if (window.confirm("Delete product?")) {
-      try {
-        await deleteProduct(id);
-        alert("Product deleted successfully!");
-        loadProducts();
-      } catch (error) {
-        console.error("Error deleting product:", error);
-        alert("Failed to delete product");
-      }
+    const ok = await confirm("Delete product?", { title: "Delete product", danger: true, confirmLabel: "Delete" });
+    if (!ok) return;
+    try {
+      await deleteProduct(id);
+      toast.success("Product deleted successfully!");
+      loadProducts();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error("Failed to delete product");
     }
   };
 
@@ -151,7 +155,7 @@ export default function ProductManagementPage() {
       console.log("Loaded inventory:", data.length, "records");
     } catch (error) {
       console.error("Error loading inventory:", error);
-      alert("Failed to load inventory");
+      toast.error("Failed to load inventory");
     }
   };
 
@@ -159,7 +163,7 @@ export default function ProductManagementPage() {
 
   const sendStockRequest = async (branchId) => {
     if (!requestQty[branchId] || requestQty[branchId] <= 0) {
-      alert("Please enter a valid quantity");
+      toast.error("Please enter a valid quantity");
       return;
     }
 
@@ -171,11 +175,11 @@ export default function ProductManagementPage() {
         requestedBy: userId // Use logged-in user ID from AuthContext
       });
 
-      alert("Stock request sent successfully!");
+      toast.success("Stock request sent successfully!");
       setRequestQty(prev => ({ ...prev, [branchId]: "" }));
     } catch (error) {
       console.error("Error sending stock request:", error);
-      alert("Failed to send stock request. Please try again.");
+      toast.error("Failed to send stock request. Please try again.");
     }
   };
 

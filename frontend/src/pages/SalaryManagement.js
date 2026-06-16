@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStaffSalaryStatus, paySalary, updateBaseSalary } from "../api/usersApi";
+import { useToast } from "../context/ToastContext";
 import "../components/DashboardLayout.css";
 
 export default function SalaryManagement() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,10 +36,10 @@ export default function SalaryManagement() {
         amount,
         month,
       });
-      alert("Salary marked as paid.");
+      toast.success("Salary marked as paid.");
       loadStaff();
     } catch (err) {
-      alert("Failed to record payment.");
+      toast.error("Failed to record payment.");
     }
   };
 
@@ -52,7 +54,7 @@ export default function SalaryManagement() {
       });
       loadStaff();
     } catch (err) {
-      alert("Failed to update salary.");
+      toast.error("Failed to update salary.");
     }
   };
 
