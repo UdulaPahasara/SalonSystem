@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { isPublicPath } from '../utils/publicPaths';
 
 const LogoutButton = () => {
     const { logout, user } = useAuth();
@@ -8,7 +9,7 @@ const LogoutButton = () => {
     const location = useLocation();
 
     // Don't show on login page
-    if (!user || location.pathname === '/login' || location.pathname === '/') {
+    if (!user || isPublicPath(location.pathname)) {
         return null;
     }
 

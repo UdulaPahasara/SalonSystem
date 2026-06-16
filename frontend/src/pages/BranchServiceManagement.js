@@ -8,7 +8,7 @@ export default function BranchServiceManagement() {
   const navigate = useNavigate();
   const { branchId } = useAuth();
   const [services, setServices] = useState([]);
-  const [form, setForm] = useState({ name: "", price: "", durationMins: "" });
+  const [form, setForm] = useState({ name: "", category: "Hair Care", price: "", durationMins: "" });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -32,11 +32,12 @@ export default function BranchServiceManagement() {
     try {
       await createService({
         name: form.name,
+        category: form.category,
         price: parseFloat(form.price),
         durationMins: parseInt(form.durationMins, 10),
         branch: { id: branchId },
       });
-      setForm({ name: "", price: "", durationMins: "" });
+      setForm({ name: "", category: "Hair Care", price: "", durationMins: "" });
       loadServices();
     } catch (err) {
       alert("Failed to create service.");
@@ -60,6 +61,21 @@ export default function BranchServiceManagement() {
         </div>
 
         <form onSubmit={handleSubmit} className="dashboard-form" style={{ maxWidth: "400px", marginBottom: "24px" }}>
+          <div className="form-group">
+            <label>Category</label>
+            <select
+              className="dashboard-input"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              required
+            >
+              <option>Hair Care</option>
+              <option>Skin & Facials</option>
+              <option>Nails</option>
+              <option>Bridal & Occasions</option>
+              <option>Spa & Wellness</option>
+            </select>
+          </div>
           <div className="form-group">
             <label>Service Name</label>
             <input
@@ -98,6 +114,7 @@ export default function BranchServiceManagement() {
           <table className="dashboard-table">
             <thead>
               <tr>
+                <th>Category</th>
                 <th>Name</th>
                 <th>Price</th>
                 <th>Duration</th>
@@ -107,6 +124,7 @@ export default function BranchServiceManagement() {
             <tbody>
               {services.map((s) => (
                 <tr key={s.serviceId}>
+                  <td>{s.category || "—"}</td>
                   <td>{s.name}</td>
                   <td>Rs. {s.price}</td>
                   <td>{s.durationMins} mins</td>

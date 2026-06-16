@@ -1,10 +1,20 @@
 import "./App.css";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { isPublicPath } from "./utils/publicPaths";
+import PublicLayout from "./components/public/PublicLayout";
 import AdminBranchInventory from "./pages/AdminBranchInventory";
 import AdminBillingHistory from "./pages/AdminBillingHistory";
 
+import Home from "./pages/Home";
 import Login from "./pages/Login";
+import ServicesPage from "./pages/public/ServicesPage";
+import AboutPage from "./pages/public/AboutPage";
+import ContactPage from "./pages/public/ContactPage";
+import PrivacyPolicyPage from "./pages/public/PrivacyPolicyPage";
+import TermsPage from "./pages/public/TermsPage";
+import RefundPolicyPage from "./pages/public/RefundPolicyPage";
+import CancellationPolicyPage from "./pages/public/CancellationPolicyPage";
 import AdminDashBoard from "./pages/AdminDashBoard";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import BranchManagerDashboard from "./pages/BranchManagerDashboard";
@@ -32,16 +42,27 @@ import AppointmentHistory from "./pages/AppointmentHistory";
 import ServiceHistory from "./pages/ServiceHistory";
 import StockRequestHistory from "./pages/StockRequestHistory";
 
-function App() {
-  return (
-    <AuthProvider>
-      <div className="App">
-        <LogoutButton />
-        <h1>Salon Management System</h1>
+function AppContent() {
+  const location = useLocation();
+  const isPublicPage = isPublicPath(location.pathname);
 
-        <Routes>
-          {/* Authentication */}
-          <Route path="/" element={<Login />} />
+  return (
+    <div className="App">
+      <LogoutButton />
+      {!isPublicPage && <h1 className="app-page-title">Salon Management System</h1>}
+
+      <Routes>
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms-of-service" element={<TermsPage />} />
+            <Route path="/refund-policy" element={<RefundPolicyPage />} />
+            <Route path="/cancellation-policy" element={<CancellationPolicyPage />} />
+          </Route>
+
           <Route path="/login" element={<Login />} />
 
           {/* Admin Routes */}
@@ -84,7 +105,14 @@ function App() {
           <Route path="/stock-request-history" element={<StockRequestHistory />} />
 
         </Routes>
-      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   );
 }

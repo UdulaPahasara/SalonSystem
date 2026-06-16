@@ -1,7 +1,14 @@
 .App {
   width: 100%;
   min-height: 100vh;
-  /* text-align: center; REMOVED to prevent global centering */
+}
+
+.app-page-title {
+  text-align: center;
+  padding: 1rem;
+  margin: 0;
+  color: #831843;
+  font-family: 'Georgia', serif;
 }
 
 .App-logo {
