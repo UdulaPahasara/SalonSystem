@@ -103,7 +103,14 @@ function Login() {
       navigate(dashboardPath, { replace: true });
     } catch (err) {
       console.error("Login error:", err);
-      setError("Invalid username or password. Please try again.");
+      const status = err.response?.status;
+      if (!err.response) {
+        setError("Cannot reach the server. Start the backend with: npm run start:api");
+      } else if (status === 401) {
+        setError("Invalid username or password. Please try again.");
+      } else {
+        setError("Login failed on the server. Restart the backend and try again.");
+      }
     } finally {
       setLoading(false);
     }
