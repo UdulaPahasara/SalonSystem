@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./Login.css";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { login } from "../api/usersApi";
 
@@ -51,6 +51,8 @@ function Login() {
   return (
     <div className="login-page-wrapper">
       <div className="login-container">
+        <h1>Lumière Salon</h1>
+        <p className="login-subtitle">Women's Salon — Staff Portal</p>
         <form onSubmit={handleSubmit}>
           <label htmlFor="jobRole">Job Role</label>
           <select
@@ -90,6 +92,7 @@ function Login() {
 
           <button type="submit">Login</button>
         </form>
+        <Link to="/" className="home-link">← Back to Homepage</Link>
       </div>
     </div>
   );

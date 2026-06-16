@@ -46,8 +46,16 @@
     font-family: 'Playfair Display', serif;
     font-size: 2.2rem;
     color: #831843;
-    margin-bottom: 2rem;
+    margin-bottom: 0.35rem;
     font-weight: 700;
+}
+
+.login-subtitle {
+    margin: 0 0 2rem;
+    color: #be185d;
+    font-size: 0.95rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
 .login-container form {
