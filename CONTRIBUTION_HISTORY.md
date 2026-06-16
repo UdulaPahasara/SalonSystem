@@ -18,3 +18,6 @@ This file records the project contribution timeline for the Rusiru branch, start
 - Confirmed the branch activity relative to the repository start.
 - Finalized the contribution log for the first project milestone.
 
+
+## 2026-06-16
+- Reviewed deployment and build flow for the single-JAR setup.
