@@ -43,8 +43,7 @@ node_modules/
 .DS_Store
 
 # --- Legacy duplicate folders (OLD split-project copies — do not use) ---
-# Before monolith merge we had separate frontend/ + backend/ folders.
-# These nested copies are leftover duplicates with their own .git repos.
-# Active code is at project root (src/, frontend/) — ignore these entirely.
-SalonManagementSystem/
-SalonMagementSystemFrontEnd/
+# Anchor to repo root only — do NOT use SalonManagementSystem/ unanchored,
+# or Git ignores src/main/java/Salon/SalonManagementSystem/ (backend source).
+/SalonManagementSystem/
+/SalonMagementSystemFrontEnd/
