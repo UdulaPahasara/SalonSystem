@@ -5,11 +5,15 @@ import {
   rejectStockRequest
 } from "../api/stockRequestApi";
 import { useAuth } from "../context/AuthContext";  // Import AuthContext
+import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
 
 export default function BranchManagerStockApproval() {
   
   /* -------------------- AUTH CONTEXT -------------------- */
   const { user, branchId, userRole } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   /* -------------------- STATE -------------------- */
   const [requests, setRequests] = useState([]);
@@ -45,28 +49,28 @@ export default function BranchManagerStockApproval() {
   /* -------------------- APPROVE/REJECT -------------------- */
 
   const approve = async (id) => {
-    if (window.confirm("Approve this stock request?")) {
-      try {
-        await approveStockRequest(id);
-        alert("Stock request approved!");
-        loadRequests();
-      } catch (error) {
-        console.error("Error approving request:", error);
-        alert("Failed to approve stock request");
-      }
+    const ok = await confirm("Approve this stock request?", { title: "Approve stock request" });
+    if (!ok) return;
+    try {
+      await approveStockRequest(id);
+      toast.success("Stock request approved!");
+      loadRequests();
+    } catch (error) {
+      console.error("Error approving request:", error);
+      toast.error("Failed to approve stock request");
     }
   };
 
   const reject = async (id) => {
-    if (window.confirm("Reject this stock request?")) {
-      try {
-        await rejectStockRequest(id);
-        alert("Stock request rejected!");
-        loadRequests();
-      } catch (error) {
-        console.error("Error rejecting request:", error);
-        alert("Failed to reject stock request");
-      }
+    const ok = await confirm("Reject this stock request?", { title: "Reject stock request", danger: true, confirmLabel: "Reject" });
+    if (!ok) return;
+    try {
+      await rejectStockRequest(id);
+      toast.success("Stock request rejected!");
+      loadRequests();
+    } catch (error) {
+      console.error("Error rejecting request:", error);
+      toast.error("Failed to reject stock request");
     }
   };
 

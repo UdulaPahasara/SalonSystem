@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { getBranches, createBranch, updateBranch, deleteBranch } from "../api/branchApi";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
 import "../components/DashboardLayout.css";
 
 export default function BranchPage() {
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [branchName, setBranchName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,11 +34,11 @@ export default function BranchPage() {
     try {
       if (editingId) {
         await updateBranch(editingId, { branchName, address, phone });
-        alert("Branch updated");
+        toast.success("Branch updated");
         setEditingId(null);
       } else {
         await createBranch({ branchName, address, phone });
-        alert("Branch added");
+        toast.success("Branch added");
       }
 
       setBranchName("");
@@ -42,16 +46,16 @@ export default function BranchPage() {
       setPhone("");
       loadBranches();
     } catch (err) {
-      alert("Error saving branch");
+      toast.error("Error saving branch");
       console.error(err);
     }
   };
 
   const remove = async (id) => {
-    if (window.confirm("Are you sure?")) {
-      await deleteBranch(id);
-      loadBranches();
-    }
+    const ok = await confirm("Are you sure?", { title: "Delete branch", danger: true, confirmLabel: "Delete" });
+    if (!ok) return;
+    await deleteBranch(id);
+    loadBranches();
   };
 
   const edit = (branch) => {

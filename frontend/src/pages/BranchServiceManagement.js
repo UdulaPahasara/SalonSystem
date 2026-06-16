@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getServicesByBranch, createService, deleteService } from "../api/serviceApi";
+import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
+import PageHeader from "../components/staff/PageHeader";
+import { getStaffHomePath } from "../utils/staffNav";
 import "../components/DashboardLayout.css";
 
 export default function BranchServiceManagement() {
-  const navigate = useNavigate();
-  const { branchId } = useAuth();
+  const { branchId, userRole } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [services, setServices] = useState([]);
   const [form, setForm] = useState({ name: "", category: "Hair Care", price: "", durationMins: "" });
   const [loading, setLoading] = useState(false);
@@ -40,12 +44,13 @@ export default function BranchServiceManagement() {
       setForm({ name: "", category: "Hair Care", price: "", durationMins: "" });
       loadServices();
     } catch (err) {
-      alert("Failed to create service.");
+      toast.error("Failed to create service.");
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this service?")) return;
+    const ok = await confirm("Delete this service?", { title: "Delete service", danger: true, confirmLabel: "Delete" });
+    if (!ok) return;
     await deleteService(id);
     loadServices();
   };
@@ -53,12 +58,7 @@ export default function BranchServiceManagement() {
   return (
     <div className="dashboard-container">
       <div className="dashboard-content">
-        <div className="dashboard-content-header">
-          <h2>Branch Services</h2>
-          <button className="dashboard-btn-secondary" onClick={() => navigate("/branch-dashboard")}>
-            ← Back to Branch Dashboard
-          </button>
-        </div>
+        <PageHeader title="Branch Services" backTo={getStaffHomePath(userRole)} />
 
         <form onSubmit={handleSubmit} className="dashboard-form" style={{ maxWidth: "400px", marginBottom: "24px" }}>
           <div className="form-group">

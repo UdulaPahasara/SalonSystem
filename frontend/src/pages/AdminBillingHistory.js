@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getBranches } from "../api/branchApi";
 import { getTransactionsByBranch } from "../api/usersApi";
+import { useToast } from "../context/ToastContext";
 import "../components/DashboardLayout.css";
 
 export default function AdminBillingHistory() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [branches, setBranches] = useState([]);
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [transactions, setTransactions] = useState([]);
@@ -39,7 +41,7 @@ export default function AdminBillingHistory() {
       setTransactions(data);
     } catch (err) {
       console.error("Failed to load transactions", err);
-      alert("Error loading transactions for this branch");
+      toast.error("Error loading transactions for this branch");
     } finally {
       setLoading(false);
     }

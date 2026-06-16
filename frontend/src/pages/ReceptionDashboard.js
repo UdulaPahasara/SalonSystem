@@ -18,6 +18,11 @@ export default function ReceptionDashboard() {
             desc: "Add, Edit, and Delete Customers.",
             onClick: () => navigate("/reception/customers"),
         },
+        {
+            title: "Website Messages",
+            desc: "View messages sent from the public Contact Us page.",
+            onClick: () => navigate("/reception/contact-messages"),
+        },
     ];
 
     return (

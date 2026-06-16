@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { SALON_INFO } from "../../utils/salonInfo";
 
 const NAV_LINKS = [
   { to: "/", label: "Home" },
@@ -15,8 +16,8 @@ export default function PublicHeader() {
       <Link to="/" className="public-brand">
         <span className="public-brand-icon">✦</span>
         <div>
-          <p className="public-brand-tag">Women's Salon</p>
-          <h1 className="public-brand-title">Lumière Salon</h1>
+          <p className="public-brand-tag">{SALON_INFO.tagline}</p>
+          <h1 className="public-brand-title">{SALON_INFO.name}</h1>
         </div>
       </Link>
 

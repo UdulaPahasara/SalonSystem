@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { getAllCustomers, createCustomer, updateCustomer, deleteCustomer } from "../api/customerApi";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
+import PageHeader from "../components/staff/PageHeader";
+import { getStaffHomePath } from "../utils/staffNav";
+import "../components/DashboardLayout.css";
 import "./CustomerManagement.css";
 
 function CustomerManagement() {
-    const { branchId } = useAuth();
+    const { branchId, userRole } = useAuth();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [customers, setCustomers] = useState([]);
     const [newCustomer, setNewCustomer] = useState({ fullName: "", phone: "", email: "" });
     const [loading, setLoading] = useState(false);
@@ -29,23 +36,23 @@ function CustomerManagement() {
         // Phone Validation
         const phoneRegex = /^\d{10}$/;
         if (!phoneRegex.test(newCustomer.phone)) {
-            alert("Please enter a valid 10-digit phone number.");
+            toast.error("Please enter a valid 10-digit phone number.");
             return;
         }
 
         try {
             if (editingCustomer) {
                 await updateCustomer(editingCustomer.customerId, newCustomer);
-                alert("Customer updated successfully!");
+                toast.success("Customer updated successfully!");
                 setEditingCustomer(null);
             } else {
                 await createCustomer({ ...newCustomer, branchId });
-                alert("Customer added successfully!");
+                toast.success("Customer added successfully!");
             }
             setNewCustomer({ fullName: "", phone: "", email: "" });
             loadCustomers();
         } catch (error) {
-            alert("Operation failed: " + (error.response?.data || error.message));
+            toast.error("Operation failed: " + (error.response?.data || error.message));
         }
     };
 
@@ -65,13 +72,14 @@ function CustomerManagement() {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this customer?")) return;
+        const ok = await confirm("Are you sure you want to delete this customer?", { title: "Delete customer", danger: true, confirmLabel: "Delete" });
+        if (!ok) return;
         try {
             await deleteCustomer(id);
-            alert("Customer deleted.");
+            toast.success("Customer deleted.");
             loadCustomers();
         } catch (error) {
-            alert("Failed to delete: " + (error.response?.data || error.message));
+            toast.error("Failed to delete: " + (error.response?.data || error.message));
         }
     };
 
@@ -81,8 +89,8 @@ function CustomerManagement() {
     );
 
     return (
-        <div className="customer-mgmt-container">
-            <h2>Customer Management</h2>
+        <div className="staff-page customer-mgmt-container">
+            <PageHeader title="Customer Management" backTo={getStaffHomePath(userRole)} />
 
             <div className="customer-forms">
                 <div className="add-customer-card">
