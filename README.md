@@ -53,7 +53,7 @@ npm run start:api
 | manager | manager | Branch Manager |
 | reception | reception | Reception |
 | pm | pm | Product Manager |
-| cashier | cashier | Cashier (select "Chashire" on login) |
+| cashier | cashier | Cashier |
 
 See **ARCHITECTURE.txt** section 11 for full database & credentials details.
 
@@ -93,6 +93,8 @@ Customers can browse the salon without logging in. The public site uses **Lumiè
 **Services page:** Loads prices from `GET /salon-app/api/services`, grouped by category (Hair Care, Skin & Facials, Nails, Bridal & Occasions, Spa & Wellness). On first backend run, `DataSeeder` inserts sample services if the table is empty. Branch managers can add or edit services (with category) under **Branch Services** in the staff dashboard.
 
 **Contact form:** Submissions are saved via `POST /salon-app/api/contact-messages`. Reception staff can view them at **Reception Dashboard → Website Messages**.
+
+**Database updates:** On every backend start, JPA updates the schema (`ddl-auto=update`) and `DatabaseMigrationRunner` fixes existing data (service categories, branch details, legacy Cashier role). Restart the API after pulling changes. Optional manual SQL: `src/main/resources/db/schema-updates.sql`.
 
 **Salon branding** (name, address, phone, hours): edit `frontend/src/utils/salonInfo.js`.
 
