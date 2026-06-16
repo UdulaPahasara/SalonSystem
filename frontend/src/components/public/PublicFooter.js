@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { SALON_INFO } from "../../utils/salonInfo";
 
 const POLICY_LINKS = [
   { to: "/privacy-policy", label: "Privacy Policy" },
@@ -12,7 +13,7 @@ export default function PublicFooter() {
     <footer className="public-footer">
       <div className="public-footer-grid">
         <div>
-          <h4>Lumière Salon</h4>
+          <h4>{SALON_INFO.name}</h4>
           <p>Elegant women's salon services — hair, skin, nails, and bridal care.</p>
         </div>
         <div>
@@ -35,7 +36,7 @@ export default function PublicFooter() {
         </div>
       </div>
       <p className="public-footer-copy">
-        © {new Date().getFullYear()} Lumière Salon. All rights reserved.
+        © {new Date().getFullYear()} {SALON_INFO.name}. All rights reserved.
       </p>
     </footer>
   );

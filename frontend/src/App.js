@@ -41,6 +41,7 @@ import ReportsPage from "./pages/ReportsPage";
 import AppointmentHistory from "./pages/AppointmentHistory";
 import ServiceHistory from "./pages/ServiceHistory";
 import StockRequestHistory from "./pages/StockRequestHistory";
+import ContactMessagesPage from "./pages/ContactMessagesPage";
 
 function AppContent() {
   const location = useLocation();
@@ -96,6 +97,7 @@ function AppContent() {
           {/* Reception Routes */}
           <Route path="/reception-dashboard" element={<ReceptionDashboard />} />
           <Route path="/reception/customers" element={<CustomerManagement />} />
+          <Route path="/reception/contact-messages" element={<ContactMessagesPage />} />
           <Route path="/reception/appointments" element={<AppointmentManagement />} />
 
           {/* Reporting & History Views */}

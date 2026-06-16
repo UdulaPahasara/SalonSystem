@@ -92,6 +92,10 @@ Customers can browse the salon without logging in. The public site uses **Lumiè
 
 **Services page:** Loads prices from `GET /salon-app/api/services`, grouped by category (Hair Care, Skin & Facials, Nails, Bridal & Occasions, Spa & Wellness). On first backend run, `DataSeeder` inserts sample services if the table is empty. Branch managers can add or edit services (with category) under **Branch Services** in the staff dashboard.
 
+**Contact form:** Submissions are saved via `POST /salon-app/api/contact-messages`. Reception staff can view them at **Reception Dashboard → Website Messages**.
+
+**Salon branding** (name, address, phone, hours): edit `frontend/src/utils/salonInfo.js`.
+
 **Dev UI:** `http://localhost:3000/salon-app/` — same routes as production.
 
 ## Development
