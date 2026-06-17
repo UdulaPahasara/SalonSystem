@@ -37,13 +37,13 @@ Default MySQL connection (override with env vars if needed):
 | MySQL user | root | `DB_USERNAME` |
 | MySQL password | root | `DB_PASSWORD` |
 
-Example for another machine:
+Set your MySQL login in a `.env` file (gitignored; `npm run start:api` and `npm run start:prod` load it automatically):
 
 ```bash
-export DB_USERNAME=myuser
-export DB_PASSWORD=mypassword
-npm run start:api
+cp .env.example .env   # then edit DB_USERNAME / DB_PASSWORD
 ```
+
+> **Access denied for user 'root'@'localhost'?** Your MySQL password differs from the default `root`. Set `DB_PASSWORD` in `.env` (leave it empty if your root user has no password, e.g. a fresh Homebrew MySQL install).
 
 **App login users** (for the UI) are **not** in `application.properties`. They are auto-created in the database by `DataSeeder.java` on first run:
 
@@ -124,15 +124,7 @@ Dev UI: **http://localhost:3000/salon-app/** (API calls proxy to port 8081; UI i
 
 > **Proxy error?** Start the backend first: `npm run start:api` in a separate terminal.
 
-## Default users
-
-| Username  | Password  | Role           |
-|-----------|-----------|----------------|
-| admin     | admin     | Owner          |
-| manager   | manager   | Branch Manager |
-| reception | reception | Reception      |
-| cashier   | cashier   | Cashier        |
-| pm        | pm        | Product Manager |
+> **Backend only:** `npm run start:api` skips the React build (`-Dskip.frontend.build=true`). Use the same flag with `./mvnw` when you don't need the UI embedded, e.g. `./mvnw compile -Dskip.frontend.build=true`.
 
 ## Project structure (single directory)
 
