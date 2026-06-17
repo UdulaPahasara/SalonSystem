@@ -21,3 +21,6 @@ This file records the project contribution timeline for the Rusiru branch, start
 
 ## 2026-06-16
 - Reviewed deployment and build flow for the single-JAR setup.
+
+## 2026-06-17
+- Documented key public and staff routes for the Salon system.
