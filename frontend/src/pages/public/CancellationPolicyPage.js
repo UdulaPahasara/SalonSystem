@@ -1,5 +1,6 @@
 import React from "react";
 import PolicyPage from "./PolicyPage";
+import { SALON_INFO } from "../../utils/salonInfo";
 
 export default function CancellationPolicyPage() {
   return (
@@ -21,8 +22,8 @@ export default function CancellationPolicyPage() {
       </ul>
       <h4>How to cancel</h4>
       <p>
-        Call +94 11 555 0100 or email bookings@lumieresalon.lk with your name, date, and
-        service type.
+        Call {SALON_INFO.phone} or message us on Facebook with your name, date, and service
+        type.
       </p>
     </PolicyPage>
   );

@@ -57,13 +57,15 @@ export default function ContactPage() {
         </article>
         <article className="contact-card">
           <h4>Phone</h4>
-          <p>{SALON_INFO.phone}</p>
-          <p>{SALON_INFO.whatsapp} (WhatsApp)</p>
+          <p><a href={SALON_INFO.phoneHref}>{SALON_INFO.phone}</a></p>
         </article>
         <article className="contact-card">
-          <h4>Email</h4>
-          <p>{SALON_INFO.email}</p>
-          <p>{SALON_INFO.bookingsEmail}</p>
+          <h4>Facebook</h4>
+          <p>
+            <a href={SALON_INFO.facebook} target="_blank" rel="noopener noreferrer">
+              Message us on Facebook
+            </a>
+          </p>
         </article>
         <article className="contact-card">
           <h4>Opening Hours</h4>

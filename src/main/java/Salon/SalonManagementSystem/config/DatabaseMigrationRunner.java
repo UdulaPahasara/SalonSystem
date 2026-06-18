@@ -149,22 +149,25 @@ public class DatabaseMigrationRunner {
 
             if (branch.getBranchName() == null
                     || branch.getBranchName().equals("Main Branch")
+                    || branch.getBranchName().equals("Lumière Salon — Main Branch")
                     || branch.getBranchName().isBlank()) {
-                branch.setBranchName("Lumière Salon — Main Branch");
+                branch.setBranchName("Malroom Salon — Main Branch");
                 changed = true;
             }
 
             if (branch.getAddress() == null
                     || branch.getAddress().equals("123 Main St")
+                    || branch.getAddress().equals("123 Main Street, Colombo, Sri Lanka")
                     || branch.getAddress().isBlank()) {
-                branch.setAddress("123 Main Street, Colombo, Sri Lanka");
+                branch.setAddress("Govinna Handiya, Ratiyelapaara, Sri Lanka");
                 changed = true;
             }
 
             if (branch.getPhone() == null
                     || branch.getPhone().equals("555-0100")
+                    || branch.getPhone().equals("+94 11 555 0100")
                     || branch.getPhone().isBlank()) {
-                branch.setPhone("+94 11 555 0100");
+                branch.setPhone("+94 77 432 6785");
                 changed = true;
             }
 

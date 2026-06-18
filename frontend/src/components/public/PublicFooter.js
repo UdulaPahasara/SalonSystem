@@ -15,6 +15,13 @@ export default function PublicFooter() {
         <div>
           <h4>{SALON_INFO.name}</h4>
           <p>Elegant women's salon services — hair, skin, nails, and bridal care.</p>
+          <p>
+            {SALON_INFO.address.line1}, {SALON_INFO.address.city}
+            <br />
+            <a href={SALON_INFO.phoneHref}>{SALON_INFO.phone}</a>
+            {" · "}
+            <a href={SALON_INFO.facebook} target="_blank" rel="noopener noreferrer">Facebook</a>
+          </p>
         </div>
         <div>
           <h4>Explore</h4>

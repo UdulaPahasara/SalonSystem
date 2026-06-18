@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import featureImage from "../../images/salon-feature.jpg";
+import { SALON_INFO } from "../../utils/salonInfo";
 
 export default function AboutPage() {
   return (
@@ -16,7 +17,8 @@ export default function AboutPage() {
         <div>
           <h3>Who we are</h3>
           <p>
-            Lumière Salon is a modern women's salon offering hair, skin, nail, bridal, and wellness
+            {SALON_INFO.name} is a women's salon at {SALON_INFO.address.line1},{" "}
+            {SALON_INFO.address.city}, founded and run by {SALON_INFO.owner}. We offer hair, skin, nail, bridal, and wellness
             services in a calm, elegant environment. Our stylists and therapists are trained to
             listen first — then recommend treatments that suit your style, skin, and schedule.
           </p>
