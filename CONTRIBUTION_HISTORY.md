@@ -24,3 +24,6 @@ This file records the project contribution timeline for the Rusiru branch, start
 
 ## 2026-06-17
 - Documented key public and staff routes for the Salon system.
+
+## 2026-06-18
+- Reviewed role access and admin workflow for owner, manager, cashier, and staff.
