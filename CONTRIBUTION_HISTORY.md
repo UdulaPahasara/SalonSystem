@@ -45,3 +45,6 @@ This file records the project contribution timeline for the Rusiru branch, start
 
 ## 2026-06-17
 - Reviewed public routes, admin areas, and role-based access patterns.`n- Clarified how the Salon system is organized across frontend and backend flows.
+
+## 2026-06-18
+- Reviewed Owner, Manager, Reception, Cashier, and Product Manager workflows.`n- Confirmed how the application supports business operations and staff responsibilities.
