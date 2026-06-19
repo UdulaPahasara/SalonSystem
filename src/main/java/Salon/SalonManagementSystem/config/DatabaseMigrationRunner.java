@@ -151,7 +151,7 @@ public class DatabaseMigrationRunner {
                     || branch.getBranchName().equals("Main Branch")
                     || branch.getBranchName().equals("Lumière Salon — Main Branch")
                     || branch.getBranchName().isBlank()) {
-                branch.setBranchName("Malroom Salon — Main Branch");
+                branch.setBranchName("Malroo Salon — Main Branch");
                 changed = true;
             }
 

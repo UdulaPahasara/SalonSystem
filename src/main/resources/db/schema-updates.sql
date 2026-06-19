@@ -39,7 +39,7 @@ WHERE r_old.role_name IN ('Chashire', 'Cashire');
 -- 4) Main branch details (matches public website)
 UPDATE branches
 SET
-  branch_name = 'Malroom Salon — Main Branch',
+  branch_name = 'Malroo Salon — Main Branch',
   address = 'Govinna Handiya, Ratiyelapaara, Sri Lanka',
   phone = '+94 77 432 6785'
 WHERE branch_name IN ('Main Branch', 'Lumière Salon — Main Branch')

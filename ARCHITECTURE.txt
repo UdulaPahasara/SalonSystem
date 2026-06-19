@@ -270,7 +270,7 @@ PRODUCTION (one process — for deployment):
 
 
 --------------------------------------------------------------------------------
-12. PUBLIC CUSTOMER WEBSITE (Malroom Salon)
+12. PUBLIC CUSTOMER WEBSITE (Malroo Salon)
 --------------------------------------------------------------------------------
 
   The React app includes a public-facing site for customers (no login required).
@@ -311,5 +311,5 @@ PRODUCTION (one process — for deployment):
 
 
 ================================================================================
-  Last updated: monolith merge + public customer website (Malroom Salon)
+  Last updated: monolith merge + public customer website (Malroo Salon)
 ================================================================================
