@@ -42,6 +42,48 @@ import ContactMessagesPage from "./pages/ContactMessagesPage";
 
 // Keep public pages separate from staff-only routes so the salon frontend stays
 // easy to navigate while role-specific dashboards remain protected behind the layout.
+const publicRoutes = [
+  { path: "/", element: <Home /> },
+  { path: "/services", element: <ServicesPage /> },
+  { path: "/about", element: <AboutPage /> },
+  { path: "/contact", element: <ContactPage /> },
+  { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
+  { path: "/terms-of-service", element: <TermsPage /> },
+  { path: "/refund-policy", element: <RefundPolicyPage /> },
+  { path: "/cancellation-policy", element: <CancellationPolicyPage /> },
+];
+
+const staffRoutes = [
+  { path: "/admin-dashboard", element: <StaffDashboardPage /> },
+  { path: "/branch-dashboard", element: <StaffDashboardPage /> },
+  { path: "/reception-dashboard", element: <StaffDashboardPage /> },
+  { path: "/pm-dashboard", element: <StaffDashboardPage /> },
+  { path: "/cashier", element: <StaffDashboardPage /> },
+  { path: "/admin/users", element: <AdminUsersPage /> },
+  { path: "/admin/branch-inventory", element: <AdminBranchInventory /> },
+  { path: "/billing", element: <AdminBillingHistory /> },
+  { path: "/branches", element: <BranchPage /> },
+  { path: "/staff", element: <SalaryManagement /> },
+  { path: "/branch/services", element: <BranchServiceManagement /> },
+  { path: "/branch/products", element: <BranchProductInventory /> },
+  { path: "/branch/billing", element: <BranchBillingHistory /> },
+  { path: "/branch/stock-requests", element: <BranchManagerStockApproval /> },
+  { path: "/branch/staff", element: <BranchStaffManagement /> },
+  { path: "/branch/appointments", element: <BranchAppointmentManagement /> },
+  { path: "/pm/products", element: <ProductManagementPage /> },
+  { path: "/pm/inventory", element: <ProductManagerInventoryPage /> },
+  { path: "/cashier/pos", element: <POSPage /> },
+  { path: "/cashier/appointments", element: <CashierAppointments /> },
+  { path: "/cashier/history", element: <TransactionHistory /> },
+  { path: "/reception/customers", element: <CustomerManagement /> },
+  { path: "/reception/contact-messages", element: <ContactMessagesPage /> },
+  { path: "/reception/appointments", element: <AppointmentManagement /> },
+  { path: "/reports", element: <ReportsPage /> },
+  { path: "/appointment-history", element: <AppointmentHistory /> },
+  { path: "/service-history", element: <ServiceHistory /> },
+  { path: "/stock-request-history", element: <StockRequestHistory /> },
+];
+
 function App() {
   return (
     <AuthProvider>
@@ -50,53 +92,17 @@ function App() {
           <div className="App">
             <Routes>
               <Route element={<PublicLayout />}>
-                <Route path="/" element={<Home />} />
-                <Route path="/services" element={<ServicesPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-                <Route path="/terms-of-service" element={<TermsPage />} />
-                <Route path="/refund-policy" element={<RefundPolicyPage />} />
-                <Route path="/cancellation-policy" element={<CancellationPolicyPage />} />
+                {publicRoutes.map(({ path, element }) => (
+                  <Route key={path} path={path} element={element} />
+                ))}
               </Route>
 
               <Route path="/login" element={<Login />} />
 
               <Route element={<StaffLayout />}>
-                <Route path="/admin-dashboard" element={<StaffDashboardPage />} />
-                <Route path="/branch-dashboard" element={<StaffDashboardPage />} />
-                <Route path="/reception-dashboard" element={<StaffDashboardPage />} />
-                <Route path="/pm-dashboard" element={<StaffDashboardPage />} />
-                <Route path="/cashier" element={<StaffDashboardPage />} />
-
-                <Route path="/admin/users" element={<AdminUsersPage />} />
-                <Route path="/admin/branch-inventory" element={<AdminBranchInventory />} />
-                <Route path="/billing" element={<AdminBillingHistory />} />
-                <Route path="/branches" element={<BranchPage />} />
-                <Route path="/staff" element={<SalaryManagement />} />
-
-                <Route path="/branch/services" element={<BranchServiceManagement />} />
-                <Route path="/branch/products" element={<BranchProductInventory />} />
-                <Route path="/branch/billing" element={<BranchBillingHistory />} />
-                <Route path="/branch/stock-requests" element={<BranchManagerStockApproval />} />
-                <Route path="/branch/staff" element={<BranchStaffManagement />} />
-                <Route path="/branch/appointments" element={<BranchAppointmentManagement />} />
-
-                <Route path="/pm/products" element={<ProductManagementPage />} />
-                <Route path="/pm/inventory" element={<ProductManagerInventoryPage />} />
-
-                <Route path="/cashier/pos" element={<POSPage />} />
-                <Route path="/cashier/appointments" element={<CashierAppointments />} />
-                <Route path="/cashier/history" element={<TransactionHistory />} />
-
-                <Route path="/reception/customers" element={<CustomerManagement />} />
-                <Route path="/reception/contact-messages" element={<ContactMessagesPage />} />
-                <Route path="/reception/appointments" element={<AppointmentManagement />} />
-
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/appointment-history" element={<AppointmentHistory />} />
-                <Route path="/service-history" element={<ServiceHistory />} />
-                <Route path="/stock-request-history" element={<StockRequestHistory />} />
+                {staffRoutes.map(({ path, element }) => (
+                  <Route key={path} path={path} element={element} />
+                ))}
               </Route>
             </Routes>
           </div>
