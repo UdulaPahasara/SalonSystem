@@ -18,6 +18,10 @@ Copy **one JAR file** to your server and run it. Maven builds the React app and 
 
 ## Quick start
 
+### Development notes
+
+This project keeps the public storefront and staff dashboard in the same frontend app, then exposes the backend API through the embedded Spring Boot server. The route structure in `frontend/src/App.js` separates public pages and role-based staff pages so the navigation stays predictable for different user types.
+
 ### Prerequisites
 
 - Java 17+

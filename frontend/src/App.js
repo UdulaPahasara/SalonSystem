@@ -40,6 +40,8 @@ import ServiceHistory from "./pages/ServiceHistory";
 import StockRequestHistory from "./pages/StockRequestHistory";
 import ContactMessagesPage from "./pages/ContactMessagesPage";
 
+// Keep public pages separate from staff-only routes so the salon frontend stays
+// easy to navigate while role-specific dashboards remain protected behind the layout.
 function App() {
   return (
     <AuthProvider>
