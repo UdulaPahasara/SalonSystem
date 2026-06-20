@@ -1,5 +1,7 @@
 import React, { createContext, useCallback, useContext, useState } from "react";
 
+const DEFAULT_TOAST_TIMEOUT_MS = 4000;
+
 const ToastContext = createContext(null);
 
 export function ToastProvider({ children }) {
@@ -12,7 +14,7 @@ export function ToastProvider({ children }) {
   const showToast = useCallback((message, type = "info") => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => dismiss(id), 4000);
+    setTimeout(() => dismiss(id), DEFAULT_TOAST_TIMEOUT_MS);
   }, [dismiss]);
 
   const value = {

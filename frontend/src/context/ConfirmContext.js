@@ -1,5 +1,7 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from "react";
 
+const DEFAULT_CONFIRM_TITLE = "Confirm action";
+
 const ConfirmContext = createContext(null);
 
 export function ConfirmProvider({ children }) {
@@ -11,7 +13,7 @@ export function ConfirmProvider({ children }) {
       resolverRef.current = resolve;
       setState({
         message,
-        title: options.title || "Confirm action",
+        title: options.title || DEFAULT_CONFIRM_TITLE,
         confirmLabel: options.confirmLabel || "Confirm",
         cancelLabel: options.cancelLabel || "Cancel",
         danger: options.danger ?? false,

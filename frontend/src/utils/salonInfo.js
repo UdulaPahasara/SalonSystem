@@ -1,6 +1,7 @@
 export const SALON_INFO = {
   name: "Lumière Salon",
   tagline: "Women's Salon",
+  supportEmail: "hello@lumieresalon.lk",
   address: {
     line1: "123 Main Street",
     city: "Colombo, Sri Lanka",

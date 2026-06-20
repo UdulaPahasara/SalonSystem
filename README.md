@@ -26,6 +26,10 @@ This project keeps the public storefront and staff dashboard in the same fronten
 
 Recent branch work keeps the project easier to maintain by grouping route logic, clarifying development workflows, and documenting the role-based structure for future contributors.
 
+### Contributor notes
+
+This repository is organized around a single Java backend and a React frontend. Keeping the route layout, context providers, and salon configuration in clearly named modules makes it easier to extend the project without breaking existing role-based flows.
+
 ### Prerequisites
 
 - Java 17+
