@@ -84,6 +84,11 @@ const staffRoutes = [
   { path: "/stock-request-history", element: <StockRequestHistory /> },
 ];
 
+const routeGroups = [
+  { layout: PublicLayout, routes: publicRoutes },
+  { layout: StaffLayout, routes: staffRoutes },
+];
+
 function App() {
   return (
     <AuthProvider>
@@ -91,19 +96,14 @@ function App() {
         <ConfirmProvider>
           <div className="App">
             <Routes>
-              <Route element={<PublicLayout />}>
-                {publicRoutes.map(({ path, element }) => (
-                  <Route key={path} path={path} element={element} />
-                ))}
-              </Route>
-
+              {routeGroups.map(({ layout: Layout, routes }) => (
+                <Route key={Layout.displayName || "layout"} element={<Layout />}>
+                  {routes.map(({ path, element }) => (
+                    <Route key={path} path={path} element={element} />
+                  ))}
+                </Route>
+              ))}
               <Route path="/login" element={<Login />} />
-
-              <Route element={<StaffLayout />}>
-                {staffRoutes.map(({ path, element }) => (
-                  <Route key={path} path={path} element={element} />
-                ))}
-              </Route>
             </Routes>
           </div>
         </ConfirmProvider>
