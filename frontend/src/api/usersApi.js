@@ -29,6 +29,9 @@ export const updateBaseSalary = (payload) =>
 export const getTransactionsByBranch = (branchId) =>
   api.get(`/transactions/branch/${branchId}`).then((r) => r.data);
 
+export const checkout = (payload) =>
+  api.post("/transactions/checkout", payload).then((r) => r.data);
+
 export const getRevenueReport = (params) =>
   api.get("/reports/revenue", { params }).then((r) => r.data);
 

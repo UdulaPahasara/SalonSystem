@@ -1,5 +1,8 @@
 package Salon.SalonManagementSystem.controller;
 
+import Salon.SalonManagementSystem.Dto.CheckoutRequest;
+import Salon.SalonManagementSystem.service.TransactionService;
+
 import Salon.SalonManagementSystem.model.Transaction;
 import Salon.SalonManagementSystem.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,18 @@ public class TransactionController {
 
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private TransactionService transactionService;
+
+    @PostMapping("/checkout")
+    public ResponseEntity<?> checkout(@RequestBody CheckoutRequest request) {
+        try {
+            return ResponseEntity.ok(transactionService.checkout(request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
     @GetMapping("/branch/{branchId}")
     public ResponseEntity<List<Transaction>> getByBranch(@PathVariable Integer branchId) {
