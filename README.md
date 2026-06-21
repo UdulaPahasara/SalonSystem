@@ -76,7 +76,7 @@ Open: **http://localhost:8081/salon-app/**
 
 ## Public customer website
 
-Customers can browse the salon without logging in. The public site uses **Lumière Salon** branding (women's salon).
+Customers can browse the salon without logging in. The public site uses **Malroom Salon** branding (women's salon, Govinna Handiya, Ratiyelapaara — owner Dulanjili Madushani).
 
 | Page | URL |
 |------|-----|

@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import heroImage from "../images/salon-hero.jpg";
 import featureImage from "../images/salon-feature.jpg";
+import { SALON_INFO } from "../utils/salonInfo";
 
 export default function Home() {
   const features = [
@@ -51,7 +52,7 @@ export default function Home() {
         <div className="home-feature-copy">
           <h3>Your beauty, our passion</h3>
           <p>
-            Lumière Salon offers a full menu of women's services — from everyday
+            {SALON_INFO.name} offers a full menu of women's services — from everyday
             hair care to bridal transformations — with clear pricing and
             category-wise service listings online.
           </p>

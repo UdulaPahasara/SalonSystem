@@ -1,12 +1,13 @@
 import React from "react";
 import PolicyPage from "./PolicyPage";
+import { SALON_INFO } from "../../utils/salonInfo";
 
 export default function PrivacyPolicyPage() {
   return (
     <PolicyPage title="Privacy Policy">
       <p><strong>Last updated:</strong> {new Date().getFullYear()}</p>
       <p>
-        Lumière Salon respects your privacy. We collect personal information such as your name,
+        {SALON_INFO.name} respects your privacy. We collect personal information such as your name,
         phone number, and email only when you book appointments, register for loyalty benefits,
         or contact us through our website.
       </p>
@@ -29,7 +30,7 @@ export default function PrivacyPolicyPage() {
         We retain records only as long as needed for business and legal purposes.
       </p>
       <h4>Contact</h4>
-      <p>For privacy requests, email hello@lumieresalon.lk.</p>
+      <p>For privacy requests, call {SALON_INFO.phone}.</p>
     </PolicyPage>
   );
 }
