@@ -1,5 +1,5 @@
 export const SALON_INFO = {
-  name: "Malroom Salon",
+  name: "Malroo Salon",
   tagline: "Women's Salon",
   owner: "Dulanjili Madushani",
   address: {

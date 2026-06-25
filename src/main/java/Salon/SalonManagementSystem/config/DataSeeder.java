@@ -35,7 +35,7 @@ public class DataSeeder {
             // 2. Ensure Branch
             Branch mainBranch = branchRepo.findAll().stream().findFirst().orElseGet(() -> {
                 Branch b = new Branch();
-                b.setBranchName("Malroom Salon — Main Branch");
+                b.setBranchName("Malroo Salon — Main Branch");
                 b.setAddress("Govinna Handiya, Ratiyelapaara, Sri Lanka");
                 b.setPhone("+94 77 432 6785");
                 return branchRepo.save(b);
