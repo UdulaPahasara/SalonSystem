@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SALON_INFO } from "../../utils/salonInfo";
 import { submitContactMessage } from "../../api/contactApi";
+import { getBranches } from "../../api/branchApi";
 
 const INITIAL_FORM = { name: "", email: "", phone: "", message: "" };
 
@@ -9,6 +10,11 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [branches, setBranches] = useState([]);
+
+  useEffect(() => {
+    getBranches().then(setBranches).catch(() => setBranches([]));
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -74,6 +80,28 @@ export default function ContactPage() {
           ))}
         </article>
       </section>
+
+      {branches.length > 0 && (
+        <section className="public-form-section">
+          <h3>Our Branches</h3>
+          <div className="contact-grid">
+            {branches.map((b) => (
+              <article key={b.id} className="contact-card">
+                <h4>{b.branchName}</h4>
+                <p>{b.address}</p>
+                {b.phone && (
+                  <p>
+                    <a href={`tel:${b.phone.replace(/\s/g, "")}`}>{b.phone}</a>
+                  </p>
+                )}
+                {SALON_INFO.hours.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="public-form-section">
         <h3>Send us a message</h3>
