@@ -100,6 +100,35 @@ Customers can browse the salon without logging in. The public site uses **Malroo
 
 **Dev UI:** `http://localhost:3000/salon-app/` — same routes as production.
 
+**Branch locations:** The Contact page lists every branch from `GET /salon-app/api/branches` with address, phone and opening hours.
+
+## Salon details
+
+| | |
+|---|---|
+| Name | Malroo Salon |
+| Owner | Dulanjili Madushani |
+| Address | Govinna Handiya, Ratiyelapaara, Sri Lanka |
+| Phone | +94 77 432 6785 |
+| Facebook | [Saloon Malroo](https://www.facebook.com/p/Saloon-Malroo-100075910615922/) |
+
+## Staff features by role
+
+| Role | Features |
+|------|----------|
+| Owner (Admin) | Staff users, branches, salary payments, inventory, billing history (all branches or one), revenue reports, appointment history |
+| Branch Manager | Branch services, stock request approval, branch stock, billing, branch revenue report, appointments |
+| Reception | Appointments, customers (search, register, update, delete), website enquiries |
+| Cashier | Point of Sale checkout, appointments, transaction history |
+| Product Manager | Products, inventory levels, stock requests and history |
+
+### Point of Sale (Cashier)
+
+Cashier → **Point of Sale**: add services and products, pick a customer (or walk-in), take **cash** (with change) or **card** payment, then **Print Receipt**.
+
+- `POST /salon-app/api/transactions/checkout` recalculates the bill from database prices (client totals are never trusted), saves each line's price at time of sale, and deducts product stock from the branch. Any error (e.g. not enough stock) rolls back the whole sale.
+- Products appear in the POS only after stock exists for the branch (Product Manager requests → Branch Manager approves).
+
 ## Development
 
 From the **project root** (no need to `cd frontend`):
