@@ -473,3 +473,16 @@
     grid-template-columns: 1fr;
   }
 }
+
+.service-filter { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1.5rem; }
+.service-filter-btn {
+  padding: 0.45rem 1rem;
+  border: 1px solid #f9a8d4;
+  border-radius: 999px;
+  background: #fff;
+  color: #9d174d;
+  font: inherit;
+  cursor: pointer;
+}
+.service-filter-btn.active,
+.service-filter-btn:hover { background: #be185d; border-color: #be185d; color: #fff; }
