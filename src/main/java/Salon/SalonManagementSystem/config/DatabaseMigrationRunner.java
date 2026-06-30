@@ -46,12 +46,15 @@ public class DatabaseMigrationRunner {
             "cashier", "Cashier"
     );
 
+    // One shared password for all default staff logins
+    public static final String DEFAULT_STAFF_PASSWORD = "Malroo@123";
+
     private static final Map<String, String> DEFAULT_USER_PASSWORDS = Map.of(
-            "admin", "admin",
-            "manager", "manager",
-            "reception", "reception",
-            "pm", "pm",
-            "cashier", "cashier"
+            "admin", DEFAULT_STAFF_PASSWORD,
+            "manager", DEFAULT_STAFF_PASSWORD,
+            "reception", DEFAULT_STAFF_PASSWORD,
+            "pm", DEFAULT_STAFF_PASSWORD,
+            "cashier", DEFAULT_STAFF_PASSWORD
     );
 
     private final RoleRepository roleRepository;

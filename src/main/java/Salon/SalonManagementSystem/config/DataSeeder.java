@@ -47,36 +47,36 @@ public class DataSeeder {
             if (userRepo.findByUsername("cashier") == null) {
                 Users cashier = new Users();
                 cashier.setUsername("cashier");
-                cashier.setPassword(passwordEncoder.encode("cashier"));
+                cashier.setPassword(passwordEncoder.encode(DatabaseMigrationRunner.DEFAULT_STAFF_PASSWORD));
                 cashier.setFullName("Cashier Test");
                 cashier.setRole(cashierRole);
                 cashier.setBranch(mainBranch);
                 userRepo.save(cashier);
-                System.out.println("CREATED USER: cashier / cashier");
+                System.out.println("CREATED USER: cashier");
             }
 
             //  Ensure Reception User
             if (userRepo.findByUsername("reception") == null) {
                 Users reception = new Users();
                 reception.setUsername("reception");
-                reception.setPassword(passwordEncoder.encode("reception"));
+                reception.setPassword(passwordEncoder.encode(DatabaseMigrationRunner.DEFAULT_STAFF_PASSWORD));
                 reception.setFullName("Reception Test");
                 reception.setRole(createRoleIfNotFound(roleRepo, "Reception"));
                 reception.setBranch(mainBranch);
                 userRepo.save(reception);
-                System.out.println("CREATED USER: reception / reception");
+                System.out.println("CREATED USER: reception");
             }
 
             //  Ensure Branch Manager User
             if (userRepo.findByUsername("manager") == null) {
                 Users manager = new Users();
                 manager.setUsername("manager");
-                manager.setPassword(passwordEncoder.encode("manager"));
+                manager.setPassword(passwordEncoder.encode(DatabaseMigrationRunner.DEFAULT_STAFF_PASSWORD));
                 manager.setFullName("Manager Test");
                 manager.setRole(createRoleIfNotFound(roleRepo, "Branch Manager"));
                 manager.setBranch(mainBranch);
                 userRepo.save(manager);
-                System.out.println("CREATED USER: manager / manager");
+                System.out.println("CREATED USER: manager");
             }
 
             //  Ensure SERVICE STAFF (Stylist, Barber, Therapist) - NOW IN SERVICE_STAFF
@@ -91,31 +91,27 @@ public class DataSeeder {
             if (userRepo.findByUsername("admin") == null) {
                 Users admin = new Users();
                 admin.setUsername("admin");
-                admin.setPassword(passwordEncoder.encode("admin"));
+                admin.setPassword(passwordEncoder.encode(DatabaseMigrationRunner.DEFAULT_STAFF_PASSWORD));
                 admin.setFullName("Admin User");
                 admin.setRole(roleRepo.findByRoleName("Owner").orElse(null));
                 userRepo.save(admin);
-                System.out.println("CREATED USER: admin / admin");
+                System.out.println("CREATED USER: admin");
             }
 
             // Ensure Product Manager User
             if (userRepo.findByUsername("pm") == null) {
                 Users pm = new Users();
                 pm.setUsername("pm");
-                pm.setPassword(passwordEncoder.encode("pm"));
+                pm.setPassword(passwordEncoder.encode(DatabaseMigrationRunner.DEFAULT_STAFF_PASSWORD));
                 pm.setFullName("Product Manager Test");
                 pm.setRole(createRoleIfNotFound(roleRepo, "Product Manager"));
                 pm.setBranch(mainBranch);
                 userRepo.save(pm);
-                System.out.println("CREATED USER: pm / pm");
+                System.out.println("CREATED USER: pm");
             }
 
-            System.out.println("=== Default app users (see ARCHITECTURE.txt) ===");
-            System.out.println("  admin / admin       (Owner)");
-            System.out.println("  manager / manager   (Branch Manager)");
-            System.out.println("  reception / reception (Reception)");
-            System.out.println("  pm / pm             (Product Manager)");
-            System.out.println("  cashier / cashier   (Cashier)");
+            System.out.println("=== Default app users: admin, manager, reception, pm, cashier (password: "
+                    + DatabaseMigrationRunner.DEFAULT_STAFF_PASSWORD + ") ===");
         };
     }
 
