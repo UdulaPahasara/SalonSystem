@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lato:wght@400;600;700&display=swap');
 
 /* ========== Staff shell ========== */
+.staff-shell *,
+.staff-shell *::before,
+.staff-shell *::after { box-sizing: border-box; }
+
 .staff-shell {
   display: flex;
   min-height: 100vh;
@@ -346,13 +350,20 @@
 }
 
 .staff-content .dashboard-content-header {
-  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .staff-content .dashboard-content-header h2 {
+  margin: 0;
   font-family: 'Cormorant Garamond', serif;
   color: #831843;
-  font-size: 1.75rem;
+  font-size: 1.85rem;
+  font-weight: 700;
 }
 
 .staff-page { max-width: 1200px; }
@@ -404,6 +415,14 @@
 .form-group { margin-bottom: 1rem; }
 
 .form-group label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: #831843;
+  font-size: 0.88rem;
+}
+
+.dashboard-form > label {
   display: block;
   margin-bottom: 0.35rem;
   font-weight: 600;
@@ -640,6 +659,48 @@
   border: 1px solid #fbcfe8;
   box-shadow: 0 4px 14px rgba(190, 24, 93, 0.04);
 }
+
+/* ========== Status badges ========== */
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: #f3f4f6;
+  color: #4b5563;
+}
+.status-badge.booked { background: #e0f2fe; color: #075985; }
+.status-badge.completed,
+.status-badge.paid,
+.status-badge.approved { background: #dcfce7; color: #166534; }
+.status-badge.cancelled,
+.status-badge.rejected { background: #ffe4e6; color: #9f1239; }
+.status-badge.pending { background: #fef3c7; color: #92400e; }
+
+/* ========== Empty rows & small helpers ========== */
+.staff-table .empty-row td,
+.dashboard-table .empty-row td {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #9d174d;
+}
+.staff-section-title {
+  margin: 1.75rem 0 0.75rem;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.35rem;
+  color: #831843;
+}
+.staff-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.staff-filter-bar .staff-input { width: auto; min-width: 220px; }
 
 /* ========== Responsive ========== */
 @media (max-width: 900px) {
