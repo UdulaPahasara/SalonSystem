@@ -54,8 +54,13 @@ export default function BranchPage() {
   const remove = async (id) => {
     const ok = await confirm("Are you sure?", { title: "Delete branch", danger: true, confirmLabel: "Delete" });
     if (!ok) return;
-    await deleteBranch(id);
-    loadBranches();
+    try {
+      await deleteBranch(id);
+      toast.success("Branch deleted");
+      loadBranches();
+    } catch (err) {
+      toast.error("This branch can't be deleted while it still has staff, services or records.");
+    }
   };
 
   const edit = (branch) => {
@@ -82,10 +87,10 @@ export default function BranchPage() {
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: "30px", alignItems: "flex-start" }}>
-          <div style={{ flex: "0 0 350px" }}>
+        <div className="staff-split">
+          <div className="staff-split-side">
             <form onSubmit={submit} className="dashboard-form">
-              <h3 style={{ marginTop: 0, marginBottom: "20px", color: "#555" }}>
+              <h3 className="staff-form-title">
                 {editingId ? "Edit Branch" : "Add Branch"}
               </h3>
 
@@ -120,16 +125,15 @@ export default function BranchPage() {
                 />
               </div>
 
-              <div style={{ marginTop: "15px" }}>
-                <button type="submit" className="dashboard-btn-primary" style={{ width: "100%" }}>
+              <div className="staff-form-actions">
+                <button type="submit" className="dashboard-btn-primary staff-btn-block">
                   {editingId ? "Update Branch" : "Add Branch"}
                 </button>
                 {editingId && (
                   <button
                     type="button"
                     onClick={cancelEdit}
-                    className="dashboard-btn-secondary"
-                    style={{ marginTop: "10px", width: "100%" }}
+                    className="dashboard-btn-secondary staff-btn-block"
                   >
                     Cancel
                   </button>
@@ -138,7 +142,7 @@ export default function BranchPage() {
             </form>
           </div>
 
-          <div style={{ flex: 1 }}>
+          <div className="staff-split-main">
             <table className="dashboard-table">
               <thead>
                 <tr>
@@ -155,9 +159,9 @@ export default function BranchPage() {
                     <td>{b.id}</td>
                     <td>{b.branchName}</td>
                     <td>{b.address}</td>
-                    <td>{b.phone}</td>
-                    <td>
-                      <button onClick={() => edit(b)} className="dashboard-btn-edit" style={{ marginRight: 5 }}>
+                    <td className="nowrap">{b.phone}</td>
+                    <td className="staff-row-actions">
+                      <button onClick={() => edit(b)} className="dashboard-btn-edit">
                         Edit
                       </button>
                       <button onClick={() => remove(b.id)} className="dashboard-btn-delete">
@@ -167,8 +171,8 @@ export default function BranchPage() {
                   </tr>
                 ))}
                 {branches.length === 0 && (
-                  <tr>
-                    <td colSpan="5" className="text-center">
+                  <tr className="empty-row">
+                    <td colSpan="5">
                       No branches found.
                     </td>
                   </tr>

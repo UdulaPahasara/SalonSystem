@@ -622,6 +622,26 @@
   font-family: 'Cormorant Garamond', serif;
 }
 
+/* ========== Split layout & form helpers ========== */
+.staff-split { display: flex; gap: 1.5rem; align-items: flex-start; }
+.staff-split-side { flex: 0 0 340px; }
+.staff-split-main { flex: 1; min-width: 0; }
+.staff-form-title {
+  margin: 0 0 1.1rem;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem;
+  color: #831843;
+}
+.staff-form-actions { margin-top: 1rem; display: grid; gap: 0.6rem; }
+.staff-btn-block { width: 100%; }
+.nowrap { white-space: nowrap; }
+.staff-form-narrow { max-width: 320px; margin-bottom: 1.25rem; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 900px) {
+  .staff-split { flex-direction: column; }
+  .staff-split-side { flex: none; width: 100%; }
+}
+
 /* ========== Chips, role badge, modal ========== */
 .staff-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .staff-chip {
