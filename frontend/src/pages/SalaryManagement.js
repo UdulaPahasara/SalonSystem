@@ -10,6 +10,8 @@ export default function SalaryManagement() {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [newSalary, setNewSalary] = useState("");
 
   useEffect(() => {
     loadStaff();
@@ -43,15 +45,22 @@ export default function SalaryManagement() {
     }
   };
 
-  const handleSalaryUpdate = async (member) => {
-    const newSalary = window.prompt("Enter new base salary:", member.baseSalary || 0);
-    if (newSalary === null) return;
+  const openSalaryEditor = (member) => {
+    setEditing(member);
+    setNewSalary(member.baseSalary || "");
+  };
+
+  const handleSalaryUpdate = async (e) => {
+    e.preventDefault();
+    const value = parseFloat(newSalary);
+    if (Number.isNaN(value) || value < 0) {
+      toast.error("Enter a valid salary amount (0 or more).");
+      return;
+    }
     try {
-      await updateBaseSalary({
-        type: member.type,
-        id: member.id,
-        baseSalary: parseFloat(newSalary),
-      });
+      await updateBaseSalary({ type: editing.type, id: editing.id, baseSalary: value });
+      toast.success("Base salary updated.");
+      setEditing(null);
       loadStaff();
     } catch (err) {
       toast.error("Failed to update salary.");
@@ -68,9 +77,10 @@ export default function SalaryManagement() {
           </button>
         </div>
 
-        <div className="dashboard-form" style={{ maxWidth: "300px", marginBottom: "20px" }}>
-          <label>Payment Month</label>
+        <div className="dashboard-form staff-form-narrow">
+          <label htmlFor="salary-month">Payment month</label>
           <input
+            id="salary-month"
             type="month"
             className="dashboard-input"
             value={month}
@@ -98,19 +108,24 @@ export default function SalaryManagement() {
                   <td>{member.name}</td>
                   <td>{member.role}</td>
                   <td>{member.branch}</td>
-                  <td>Rs. {member.baseSalary || 0}</td>
-                  <td>{member.isPaid ? "Yes" : "No"}</td>
+                  <td>{member.baseSalary ? `Rs. ${Number(member.baseSalary).toLocaleString()}` : "Not set"}</td>
                   <td>
+                    <span className={`status-badge ${member.isPaid ? "paid" : "pending"}`}>
+                      {member.isPaid ? "Paid" : "Unpaid"}
+                    </span>
+                  </td>
+                  <td className="staff-row-actions">
                     {!member.isPaid && (
-                      <button className="dashboard-btn-primary" onClick={() => handlePay(member)}>
+                      <button
+                        className="dashboard-btn-primary"
+                        disabled={!member.baseSalary}
+                        title={member.baseSalary ? undefined : "Set a base salary first"}
+                        onClick={() => handlePay(member)}
+                      >
                         Pay
                       </button>
                     )}
-                    <button
-                      className="dashboard-btn-edit"
-                      style={{ marginLeft: 8 }}
-                      onClick={() => handleSalaryUpdate(member)}
-                    >
+                    <button className="dashboard-btn-edit" onClick={() => openSalaryEditor(member)}>
                       Edit Salary
                     </button>
                   </td>
@@ -120,6 +135,34 @@ export default function SalaryManagement() {
           </table>
         )}
       </div>
+
+      {editing && (
+        <div className="modal-overlay" onClick={() => setEditing(null)}>
+          <div className="modal-content" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <h3>Edit base salary</h3>
+            <form onSubmit={handleSalaryUpdate}>
+              <div className="form-group">
+                <label htmlFor="base-salary">{editing.name} — monthly base salary (Rs.)</label>
+                <input
+                  id="base-salary"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="staff-input"
+                  value={newSalary}
+                  onChange={(e) => setNewSalary(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="staff-btn staff-btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
+                <button type="submit" className="staff-btn staff-btn-primary">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
