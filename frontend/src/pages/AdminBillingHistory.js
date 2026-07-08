@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getBranches } from "../api/branchApi";
-import { getTransactionsByBranch } from "../api/usersApi";
+import { getAllTransactions, getTransactionsByBranch } from "../api/usersApi";
 import { useToast } from "../context/ToastContext";
 import "../components/DashboardLayout.css";
 
@@ -27,21 +27,17 @@ export default function AdminBillingHistory() {
   };
 
   useEffect(() => {
-    if (selectedBranchId) {
-      loadTransactions(selectedBranchId);
-    } else {
-      setTransactions([]);
-    }
+    loadTransactions(selectedBranchId);
   }, [selectedBranchId]);
 
   const loadTransactions = async (branchId) => {
     setLoading(true);
     try {
-      const data = await getTransactionsByBranch(branchId);
+      const data = branchId ? await getTransactionsByBranch(branchId) : await getAllTransactions();
       setTransactions(data);
     } catch (err) {
       console.error("Failed to load transactions", err);
-      toast.error("Error loading transactions for this branch");
+      toast.error("Error loading transactions");
     } finally {
       setLoading(false);
     }
@@ -65,7 +61,7 @@ export default function AdminBillingHistory() {
               value={selectedBranchId}
               onChange={(e) => setSelectedBranchId(e.target.value)}
             >
-              <option value="">-- Choose Branch --</option>
+              <option value="">All Branches</option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.branchName}
@@ -77,14 +73,15 @@ export default function AdminBillingHistory() {
 
         {loading ? (
           <p>Loading transactions...</p>
-        ) : selectedBranchId && transactions.length === 0 ? (
-          <p>No transactions found for this branch.</p>
-        ) : transactions.length > 0 ? (
+        ) : transactions.length === 0 ? (
+          <p>No transactions found.</p>
+        ) : (
           <table className="dashboard-table">
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Date</th>
+                <th>Branch</th>
                 <th>Total Amount</th>
                 <th>Payment Method</th>
                 <th>Cashier</th>
@@ -96,6 +93,7 @@ export default function AdminBillingHistory() {
                 <tr key={t.transactionId}>
                   <td>{t.transactionId}</td>
                   <td>{new Date(t.dateTime).toLocaleString()}</td>
+                  <td>{t.branch ? t.branch.branchName : "N/A"}</td>
                   <td>Rs. {t.totalAmount}</td>
                   <td>{t.paymentMethod}</td>
                   <td>{t.cashier ? t.cashier.fullName : "N/A"}</td>
@@ -104,8 +102,6 @@ export default function AdminBillingHistory() {
               ))}
             </tbody>
           </table>
-        ) : (
-          <p>Please select a branch to view transactions.</p>
         )}
       </div>
     </div>
