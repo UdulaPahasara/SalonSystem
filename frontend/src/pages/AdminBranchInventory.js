@@ -57,7 +57,7 @@ export default function AdminBranchInventory() {
           </button>
         </div>
 
-        <div className="dashboard-form" style={{ marginBottom: "30px", maxWidth: "400px" }}>
+        <div className="dashboard-form staff-form-narrow">
           <div className="form-group">
             <label>Select Branch</label>
             <select
@@ -78,7 +78,10 @@ export default function AdminBranchInventory() {
         {loading ? (
           <p>Loading inventory...</p>
         ) : selectedBranchId && inventory.length === 0 ? (
-          <p>No inventory found for this branch.</p>
+          <div className="staff-empty-state">
+            <h3>No stock at this branch</h3>
+            <p>Stock appears after a stock request is approved.</p>
+          </div>
         ) : inventory.length > 0 ? (
           <table className="dashboard-table">
             <thead>
@@ -95,7 +98,7 @@ export default function AdminBranchInventory() {
                   <td>{item.productId}</td>
                   <td>{item.productName}</td>
                   <td>Rs. {item.unitPrice}</td>
-                  <td style={{ fontWeight: "bold", color: item.quantity < 5 ? "red" : "black" }}>
+                  <td className={item.quantity < 5 ? "stock-low" : "stock-ok"}>
                     {item.quantity}
                   </td>
                 </tr>
@@ -103,7 +106,10 @@ export default function AdminBranchInventory() {
             </tbody>
           </table>
         ) : (
-          <p>Please select a branch to view inventory.</p>
+          <div className="staff-empty-state">
+            <h3>Choose a branch</h3>
+            <p>Select a branch above to see its stock levels.</p>
+          </div>
         )}
       </div>
     </div>
