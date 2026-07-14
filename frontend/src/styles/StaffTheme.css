@@ -635,6 +635,8 @@
 .staff-form-actions { margin-top: 1rem; display: grid; gap: 0.6rem; }
 .staff-btn-block { width: 100%; }
 .nowrap { white-space: nowrap; }
+.stock-low { font-weight: 700; color: #be123c; }
+.stock-ok { font-weight: 700; }
 .staff-form-narrow { max-width: 320px; margin-bottom: 1.25rem; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 900px) {
