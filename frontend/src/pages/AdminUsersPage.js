@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   getUsers,
   getRoles,
@@ -25,6 +26,7 @@ export default function AdminUsersPage() {
   const toast = useToast();
   const confirm = useConfirm();
   const { userId, userRole } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -123,6 +125,15 @@ export default function AdminUsersPage() {
     }
     setIsModalOpen(true);
   };
+
+  // Dashboard "Add staff user" opens the form directly via ?new=1
+  useEffect(() => {
+    if (searchParams.get("new")) {
+      openModal();
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const closeModal = () => {
     setIsModalOpen(false);
