@@ -5,11 +5,13 @@ import { getRoleDisplayName } from "../utils/authRoutes";
 import { getDashboardConfig } from "../utils/dashboardConfigs";
 import { getStaffHomePath } from "../utils/staffNav";
 import StaffDashboardHome from "../components/staff/StaffDashboardHome";
+import OwnerDashboard from "../components/staff/OwnerDashboard";
 
 export default function StaffDashboardPage() {
   const { userRole, fullName } = useAuth();
   const config = getDashboardConfig(userRole);
-  const homePath = getStaffHomePath(userRole);
+
+  if (userRole === "Owner") return <OwnerDashboard userName={fullName} />;
 
   if (!config) {
     return (

@@ -1,0 +1,73 @@
+/* Owner dashboard — uses the staff theme palette (plum ink, rose accent, ivory cards) */
+.dash { max-width: 1320px; margin: 0 auto; color: #3a0a22; }
+.dash *, .dash *::before, .dash *::after { box-sizing: border-box; }
+
+.dash-head { margin-bottom: 1.5rem; }
+.dash-eyebrow { margin: 0 0 0.35rem; color: #a91a58; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.dash-head h1 { margin: 0; font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 3.4vw, 2.9rem); line-height: 1.05; color: #3a0a22; }
+.dash-sub { margin: 0.4rem 0 0; color: #735c66; }
+
+.dash-alert { margin-bottom: 1rem; padding: 0.8rem 1rem; border: 1px solid #e6b4c0; border-radius: 8px; background: #fdf0f3; color: #9f1239; font-weight: 600; }
+
+.dash-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #e2d7cf; border-radius: 8px; background: #fffdf9; margin-bottom: 1.25rem; }
+.dash-kpi { padding: 1.15rem 1.35rem; border-left: 1px solid #e2d7cf; min-width: 0; }
+.dash-kpi:first-child { border-left: 0; }
+.dash-kpi-label { margin: 0; color: #a91a58; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.dash-kpi-value { margin: 0.35rem 0 0.15rem; font-size: 1.7rem; font-weight: 700; color: #3a0a22; font-variant-numeric: tabular-nums; }
+.dash-kpi-hint { margin: 0; color: #806774; font-size: 0.85rem; }
+
+.dash-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.dash-col { display: grid; gap: 1.25rem; min-width: 0; }
+.dash-card { padding: 1.25rem 1.35rem; border: 1px solid #e2d7cf; border-radius: 8px; background: #fffdf9; }
+.dash-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.dash-card-head h2 { margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: #3a0a22; }
+.dash-card-head a { color: #a91a58; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+.dash-card-head a:hover { color: #71113d; text-decoration: underline; }
+.dash-empty { margin: 0; padding: 1.25rem 0; color: #806774; text-align: center; }
+
+/* Sales chart: one series, one hue, anchored bars, recessive grid */
+.dash-chart { display: flex; gap: 0.6rem; height: 230px; padding-top: 0.5rem; }
+.dash-chart-axis { display: flex; flex-direction: column; justify-content: space-between; padding-bottom: 1.6rem; width: 2.2rem; text-align: right; color: #806774; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.dash-chart-plot { position: relative; flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; padding-bottom: 1.6rem; }
+.dash-chart-lines { position: absolute; top: 0; bottom: 1.6rem; left: 0; right: 0; pointer-events: none; }
+.dash-chart-lines i { position: absolute; left: 0; right: 0; height: 1px; background: #eee5de; }
+.dash-chart-col { position: relative; display: flex; align-items: flex-end; justify-content: center; height: 100%; outline: none; cursor: default; }
+.dash-chart-bar { display: block; width: min(46px, 70%); min-height: 3px; border-radius: 4px 4px 0 0; background: #a91a58; transition: background 0.15s; }
+.dash-chart-col:hover .dash-chart-bar,
+.dash-chart-col:focus-visible .dash-chart-bar { background: #71113d; }
+.dash-chart-col:focus-visible { box-shadow: 0 0 0 2px #c99a4a; border-radius: 4px; }
+.dash-chart-day { position: absolute; bottom: -1.6rem; left: 0; right: 0; text-align: center; color: #735c66; font-size: 0.78rem; }
+.dash-chart-tip { position: absolute; left: 50%; transform: translateX(-50%); z-index: 2; display: grid; gap: 0.1rem; padding: 0.45rem 0.65rem; border-radius: 6px; background: #3a0a22; color: #fff; font-size: 0.75rem; white-space: nowrap; pointer-events: none; }
+.dash-chart-tip b { font-size: 0.9rem; }
+
+.dash-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.dash-table th { padding: 0.5rem 0.6rem; border-bottom: 1px solid #e2d7cf; color: #806774; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-align: left; text-transform: uppercase; }
+.dash-table td { padding: 0.7rem 0.6rem; border-bottom: 1px solid #f0e8e2; }
+.dash-table tr:last-child td { border-bottom: 0; }
+.dash-table .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.dash-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.5rem; }
+.dash-list a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0.9rem; border: 1px solid #e8ddd5; border-radius: 8px; color: #3a0a22; text-decoration: none; transition: border-color 0.15s, background 0.15s; }
+.dash-list a:hover, .dash-list a:focus-visible { border-color: #a91a58; background: #fbf3f5; outline: none; }
+.dash-list a b { min-width: 2rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: #f5e9ed; color: #71113d; text-align: center; font-variant-numeric: tabular-nums; }
+.dash-list a span { flex: 1; }
+.dash-list a i { color: #a91a58; font-style: normal; }
+.dash-actions strong { display: block; }
+.dash-actions small { display: block; color: #806774; font-size: 0.82rem; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 1000px) {
+  .dash-grid { grid-template-columns: 1fr; }
+  .dash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-kpi:nth-child(3) { border-left: 0; }
+  .dash-kpi:nth-child(n + 3) { border-top: 1px solid #e2d7cf; }
+}
+@media (max-width: 520px) {
+  .dash-kpis { grid-template-columns: 1fr; }
+  .dash-kpi { border-left: 0; border-top: 1px solid #e2d7cf; }
+  .dash-kpi:first-child { border-top: 0; }
+}
+
+/* Module cards are links now */
+a.staff-module-card { color: inherit; text-decoration: none; }

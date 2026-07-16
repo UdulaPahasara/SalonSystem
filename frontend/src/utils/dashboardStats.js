@@ -1,5 +1,4 @@
-import { getBranches } from "../api/branchApi";
-import { getUsers, getAllTransactions, getTransactionsByBranch } from "../api/usersApi";
+import { getTransactionsByBranch } from "../api/usersApi";
 import { getAllAppointments } from "../api/appointmentApi";
 import { getAllCustomers } from "../api/customerApi";
 import { getContactMessages } from "../api/contactApi";
@@ -15,11 +14,6 @@ const pending = (res) => res.data.filter((r) => r.status === "PENDING").length;
 
 // Each role maps to a list of live figures; a failed lookup shows "—" instead of breaking the page.
 const STATS = {
-  Owner: () => [
-    { label: "Branches", hint: "Salon locations", load: () => getBranches().then((d) => d.length) },
-    { label: "Staff accounts", hint: "Across all branches", load: () => getUsers().then((d) => d.length) },
-    { label: "Sales today", hint: "All branches", load: () => getAllTransactions().then((d) => rs(salesToday(d))) },
-  ],
   "Branch Manager": ({ branchId }) => [
     { label: "Services offered", hint: "On the public menu", load: () => getServicesByBranch(branchId).then((d) => d.length) },
     { label: "Stock requests pending", hint: "Waiting for approval", load: () => getStockRequestsByBranch(branchId).then(pending) },
