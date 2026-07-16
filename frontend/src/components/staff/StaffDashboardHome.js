@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getStatDefinitions } from "../../utils/dashboardStats";
 import StaffModuleIcon from "./StaffModuleIcon";
+import "../../styles/Dashboard.css";
 
 export default function StaffDashboardHome({ config, userName, roleLabel }) {
-  const navigate = useNavigate();
   const { userRole, branchId } = useAuth();
   const greeting = getGreeting();
   const definitions = getStatDefinitions(userRole, { branchId });
@@ -46,11 +46,10 @@ export default function StaffDashboardHome({ config, userName, roleLabel }) {
         <h2>Quick access</h2>
         <div className="staff-module-grid">
           {config.modules.map((mod) => (
-            <button
+            <Link
               key={mod.path}
-              type="button"
+              to={mod.path}
               className={`staff-module-card${mod.highlight ? " staff-module-card-highlight" : ""}`}
-              onClick={() => navigate(mod.path)}
             >
               <StaffModuleIcon name={mod.icon} />
               <div>
@@ -58,7 +57,7 @@ export default function StaffDashboardHome({ config, userName, roleLabel }) {
                 <p>{mod.desc}</p>
               </div>
               <span className="staff-module-arrow">→</span>
-            </button>
+            </Link>
           ))}
         </div>
       </section>
