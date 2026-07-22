@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { login } from "../api/usersApi";
 import { getDashboardPathForRole } from "../utils/authRoutes";
 import { SALON_INFO } from "../utils/salonInfo";
-import heroImage from "../images/salon-hero.jpg";
+import heroImage from "../images/redesign/hero-salon.png";
 import "./Login.css";
 
 function UserIcon() {
@@ -134,7 +134,7 @@ function Login() {
           </Link>
 
           <div className="login-brand">
-            <span className="login-brand-icon">✦</span>
+            <span className="login-brand-icon">M</span>
             <div>
               <p className="login-brand-tag">Staff Portal</p>
               <h1>Welcome back</h1>
