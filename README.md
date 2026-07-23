@@ -49,11 +49,11 @@ cp .env.example .env   # then edit DB_USERNAME / DB_PASSWORD
 
 | Username | Password | Role |
 |----------|----------|------|
-| admin | admin | Owner |
-| manager | manager | Branch Manager |
-| reception | reception | Reception |
-| pm | pm | Product Manager |
-| cashier | cashier | Cashier |
+| admin | Malroo@123 | Owner |
+| manager | Malroo@123 | Branch Manager |
+| reception | Malroo@123 | Reception |
+| pm | Malroo@123 | Product Manager |
+| cashier | Malroo@123 | Cashier |
 
 See **ARCHITECTURE.txt** section 11 for full database & credentials details.
 
