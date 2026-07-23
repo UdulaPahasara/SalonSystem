@@ -37,7 +37,7 @@ export default function StaffLayout() {
     <div className="staff-shell">
       <aside className="staff-sidebar">
         <Link to={homePath} className="staff-sidebar-brand">
-          <span className="staff-sidebar-icon">✦</span>
+          <span className="staff-sidebar-icon">M</span>
           <div>
             <p className="staff-sidebar-tag">{SALON_INFO.tagline}</p>
             <p className="staff-sidebar-title">{SALON_INFO.name}</p>
