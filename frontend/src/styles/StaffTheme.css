@@ -622,25 +622,64 @@
   font-family: 'Cormorant Garamond', serif;
 }
 
-/* ========== Admin users page inside staff shell ========== */
-.staff-content .adminusers-container {
-  height: auto;
-  min-height: auto;
-  background: transparent;
-}
-
-.staff-content .admin-sidebar {
-  background: #fff;
+/* ========== Chips, role badge, modal ========== */
+.staff-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.staff-chip {
+  padding: 0.4rem 0.95rem;
   border: 1px solid #fbcfe8;
-  border-radius: 14px;
+  border-radius: 999px;
+  background: #fff;
+  color: #9d174d;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.staff-chip:hover { background: #fdf2f8; }
+.staff-chip.active { background: #be185d; border-color: #be185d; color: #fff; }
+
+.role-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #fdf2f8;
+  color: #9d174d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
-.staff-content .admin-content { padding: 0 0 0 1.25rem; }
+.staff-row-actions { white-space: nowrap; }
+.staff-row-actions button + button { margin-left: 0.4rem; }
 
-.staff-content .content-header h2 {
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(83, 24, 67, 0.35);
+}
+.modal-content {
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding: 1.75rem;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+.modal-content h3 {
+  margin: 0 0 1.25rem;
   font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem;
   color: #831843;
 }
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
 
 .staff-content .customer-mgmt-container h2,
 .staff-content .customer-mgmt-container h3 {
