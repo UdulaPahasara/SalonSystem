@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
 import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
 import { rs } from "../utils/format";
 import "../components/DashboardLayout.css";
@@ -53,6 +54,8 @@ export default function SalaryManagement() {
     const q = query.trim().toLowerCase();
     return !q || [m.name, m.role, m.branch].some((v) => (v || "").toLowerCase().includes(q));
   });
+
+  const { page, setPage, pageItems, total: rowCount } = usePagination(rows, `${filter}|${query}|${month}`);
 
   const handlePay = async (member) => {
     const ok = await confirm(`Pay ${rs(member.baseSalary)} to ${member.name} for ${monthLabel}?`, {
@@ -159,7 +162,7 @@ export default function SalaryManagement() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((m) => (
+            {pageItems.map((m) => (
               <tr key={`${m.type}-${m.id}`}>
                 <td className="staff-cell-strong">{m.name}</td>
                 <td><span className="role-badge">{m.role}</span></td>
@@ -191,6 +194,7 @@ export default function SalaryManagement() {
           </tbody>
         </table>
       )}
+      {!loading && !error && <Pagination page={page} total={rowCount} onPage={setPage} />}
 
       {editing && (
         <div className="modal-overlay" onClick={() => setEditing(null)}>
