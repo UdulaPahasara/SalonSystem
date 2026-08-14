@@ -1,230 +1,295 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { getAllAppointments, createAppointment, updateAppointment, deleteAppointment } from "../api/appointmentApi";
 import { getAllCustomers } from "../api/customerApi";
 import { getServicesByBranch } from "../api/serviceApi";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
-import "./AppointmentManagement.css";
+import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
+import { getStaffHomePath } from "../utils/staffNav";
+import { PERIODS, inPeriod } from "../utils/format";
+import "../components/DashboardLayout.css";
+import "../styles/Dashboard.css";
+import "../styles/StaffPages.css";
+
+const STATUSES = ["All", "Booked", "Completed", "Cancelled"];
+const APPT_PERIODS = [{ id: "upcoming", label: "Upcoming" }, ...PERIODS];
+const EMPTY = { customerId: "", serviceType: "", date: "", time: "", applyLoyalty: false };
+
+const pad = (n) => String(n).padStart(2, "0");
+const localDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const statusOf = (a) => (a.status || "BOOKED").toUpperCase();
 
 function AppointmentManagement() {
-    const { branchId } = useAuth();
-    const toast = useToast();
-    const confirm = useConfirm();
-    const [appointments, setAppointments] = useState([]);
-    const [customers, setCustomers] = useState([]);
-    const [services, setServices] = useState([]);
-    const [newAppt, setNewAppt] = useState({
-        customerId: "",
-        serviceType: "",
-        date: "",
-        time: ""
+  const { branchId, userRole } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [appointments, setAppointments] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(EMPTY);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("All");
+  const [period, setPeriod] = useState("upcoming");
+  const [query, setQuery] = useState("");
+
+  const loadData = async () => {
+    try {
+      const [apptData, custData, serviceData] = await Promise.all([
+        getAllAppointments(branchId), // only this branch's bookings
+        getAllCustomers(branchId),
+        getServicesByBranch(branchId),
+      ]);
+      setAppointments(apptData);
+      setCustomers(custData);
+      setServices(serviceData);
+    } catch (err) {
+      toast.error("Couldn't load appointments. Check that the server is running.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (branchId) loadData();
+    else setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branchId]);
+
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const now = new Date();
+    const list = appointments.filter((a) => {
+      if (period === "upcoming" ? new Date(a.appointmentTime) < now : !inPeriod(a.appointmentTime, period)) return false;
+      if (status !== "All" && statusOf(a) !== status.toUpperCase()) return false;
+      return !q || [a.customer?.fullName, a.serviceType, a.assignedStaff?.fullName].some((v) => (v || "").toLowerCase().includes(q));
     });
-    const [loading, setLoading] = useState(false);
+    // upcoming reads soonest-first; everything else newest-first
+    return list.sort((a, b) => (period === "upcoming" ? 1 : -1) * (new Date(a.appointmentTime) - new Date(b.appointmentTime)));
+  }, [appointments, status, period, query]);
 
-    // Edit Mode State
-    const [editingAppt, setEditingAppt] = useState(null);
+  const { page, setPage, pageItems, total } = usePagination(rows, [status, period, query].join("|"));
 
-    useEffect(() => {
-        if (branchId) {
-            loadData();
-        }
-    }, [branchId]);
+  const today = new Date().toDateString();
+  const kpis = [
+    { label: "Today", value: appointments.filter((a) => new Date(a.appointmentTime).toDateString() === today && statusOf(a) !== "CANCELLED").length, hint: "Appointments today" },
+    { label: "Upcoming", value: appointments.filter((a) => statusOf(a) === "BOOKED" && new Date(a.appointmentTime) >= new Date()).length, hint: "Booked, still to come" },
+    { label: "Completed", value: appointments.filter((a) => statusOf(a) === "COMPLETED").length, hint: "Finished visits" },
+    { label: "Cancelled", value: appointments.filter((a) => statusOf(a) === "CANCELLED").length, hint: "Cancelled bookings" },
+  ];
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [apptData, custData, serviceData] = await Promise.all([
-                getAllAppointments(),
-                getAllCustomers(branchId),
-                getServicesByBranch(branchId) // Fetch services dynamicallly
-            ]);
-            setAppointments(apptData);
-            setCustomers(custData);
-            setServices(serviceData);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const openDialog = (appt = null) => {
+    if (appt) {
+      const dt = new Date(appt.appointmentTime);
+      setEditing(appt);
+      setForm({
+        customerId: appt.customer ? appt.customer.customerId : "",
+        serviceType: appt.serviceType,
+        date: localDate(dt),
+        time: `${pad(dt.getHours())}:${pad(dt.getMinutes())}`,
+        applyLoyalty: appt.applyLoyalty || false,
+      });
+    } else {
+      setEditing(null);
+      setForm({ ...EMPTY, date: localDate(new Date()) });
+    }
+    setDialogOpen(true);
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            // Combine date and time
-            const appointmentTime = `${newAppt.date}T${newAppt.time}`;
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditing(null);
+  };
 
-            if (editingAppt) {
-                await updateAppointment(editingAppt.appointmentId, {
-                    ...newAppt,
-                    appointmentTime // Send combined ISO string
-                });
-                toast.success("Appointment updated!");
-                setEditingAppt(null);
-            } else {
-                await createAppointment({
-                    customerId: parseInt(newAppt.customerId),
-                    serviceType: newAppt.serviceType,
-                    appointmentTime, // Send combined ISO string
-                    branchId, // Pass the branchId
-                    applyLoyalty: newAppt.applyLoyalty
-                });
-                toast.success("Appointment booked!");
-            }
-            setNewAppt({ customerId: "", serviceType: "", date: "", time: "", applyLoyalty: false });
-            loadData();
-        } catch (error) {
-            toast.error("Operation failed: " + (error.response?.data || error.message));
-        }
-    };
-
-    const handleEdit = (appt) => {
-        setEditingAppt(appt);
-        // Split ISO string back to date and time
-        const dt = new Date(appt.appointmentTime);
-        // Format to YYYY-MM-DD
-        const dateStr = dt.toISOString().split('T')[0];
-        // Format to HH:mm
-        // Note: toTimeString depends on local time zone, ensure consistency or use split/UTC if prefer
-        // Since we stored it as ISO (UTC usually) but display in local, let's keep it simple:
-        const timeStr = dt.toTimeString().slice(0, 5); // HH:mm:ss -> HH:mm
-
-        setNewAppt({
-            customerId: appt.customer.customerId,
-            serviceType: appt.serviceType,
-            date: dateStr,
-            time: timeStr,
-            applyLoyalty: appt.applyLoyalty || false
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const appointmentTime = `${form.date}T${form.time}`;
+    setSaving(true);
+    try {
+      if (editing) {
+        await updateAppointment(editing.appointmentId, { ...form, appointmentTime });
+        toast.success("Appointment updated.");
+      } else {
+        await createAppointment({
+          customerId: parseInt(form.customerId, 10),
+          serviceType: form.serviceType,
+          appointmentTime,
+          branchId,
+          applyLoyalty: form.applyLoyalty,
         });
-    };
+        toast.success("Appointment booked.");
+      }
+      closeDialog();
+      loadData();
+    } catch (error) {
+      toast.error("Couldn't save the appointment: " + (error.response?.data || error.message));
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    const handleDelete = async (id) => {
-        const ok = await confirm("Cancel this appointment?", { title: "Cancel appointment", danger: true, confirmLabel: "Cancel" });
-        if (!ok) return;
-        try {
-            await deleteAppointment(id);
-            toast.success("Appointment cancelled.");
-            loadData();
-        } catch (error) {
-            toast.error("Failed to cancel: " + (error.response?.data || error.message));
+  const handleCancel = async (a) => {
+    const ok = await confirm(`Cancel ${a.customer ? a.customer.fullName + "'s" : "this"} ${a.serviceType} appointment?`, {
+      title: "Cancel appointment",
+      danger: true,
+      confirmLabel: "Cancel appointment",
+    });
+    if (!ok) return;
+    try {
+      await deleteAppointment(a.appointmentId);
+      toast.success("Appointment cancelled.");
+      loadData();
+    } catch (error) {
+      toast.error("Failed to cancel: " + (error.response?.data || error.message));
+    }
+  };
+
+  return (
+    <div className="staff-page">
+      <PageHeader
+        title="Appointments"
+        subtitle="Book, reschedule and cancel appointments for your branch."
+        backTo={getStaffHomePath(userRole)}
+        actions={
+          <button className="staff-btn staff-btn-primary" onClick={() => openDialog()}>
+            + Book Appointment
+          </button>
         }
-    };
+      />
 
-    return (
-        <div className="appt-container">
-            <h2>Appointment Management</h2>
+      <section className="dash-kpis staff-kpis" aria-label="Appointment summary">
+        {kpis.map((k) => (
+          <article key={k.label} className="dash-kpi">
+            <p className="dash-kpi-label">{k.label}</p>
+            <p className="dash-kpi-value">{loading ? "…" : k.value}</p>
+            <p className="dash-kpi-hint">{k.hint}</p>
+          </article>
+        ))}
+      </section>
 
-            <div className="appt-content">
-                <div className="appt-form-card">
-                    <h3>{editingAppt ? "Reschedule Appointment" : "Book New Appointment"}</h3>
-                    <form onSubmit={handleSubmit}>
-                        <label>Customer</label>
-                        <select
-                            value={newAppt.customerId}
-                            onChange={e => setNewAppt({ ...newAppt, customerId: e.target.value })}
-                            required
-                            disabled={!!editingAppt} // Disable customer change on edit for simplicity
-                        >
-                            <option value="">Select Customer</option>
-                            {customers.map(c => (
-                                <option key={c.customerId} value={c.customerId}>
-                                    {c.fullName} ({c.phone}) - Loyalty: {c.loyaltyPoints} pts
-                                </option>
-                            ))}
-                        </select>
-
-                        <label>Service Type</label>
-                        <select
-                            value={newAppt.serviceType}
-                            onChange={e => setNewAppt({ ...newAppt, serviceType: e.target.value })}
-                            required
-                        >
-                            <option value="">Select Service</option>
-                            {services.length > 0 ? (
-                                services.map(s => (
-                                    <option key={s.serviceId} value={s.name}>
-                                        {s.name} (Rs. {s.price} - {s.durationMins}m)
-                                    </option>
-                                ))
-                            ) : (
-                                <option disabled>No services available for this branch</option>
-                            )}
-                        </select>
-
-                        <label>Date</label>
-                        <input
-                            type="date"
-                            value={newAppt.date}
-                            onChange={e => setNewAppt({ ...newAppt, date: e.target.value })}
-                            required
-                        />
-
-                        <label>Time</label>
-                        <input
-                            type="time"
-                            value={newAppt.time}
-                            onChange={e => setNewAppt({ ...newAppt, time: e.target.value })}
-                            required
-                        />
-
-                        <div className="form-group-checkbox">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={newAppt.applyLoyalty || false}
-                                    onChange={e => setNewAppt({ ...newAppt, applyLoyalty: e.target.checked })}
-                                />
-                                Apply Loyalty / Add Points?
-                            </label>
-                        </div>
-
-                        <button type="submit" className="book-btn">
-                            {editingAppt ? "Update Appointment" : "Book Appointment"}
-                        </button>
-                        {editingAppt && (
-                            <button type="button" onClick={() => { setEditingAppt(null); setNewAppt({ customerId: "", serviceType: "", date: "", time: "", applyLoyalty: false }); }} style={{ marginLeft: '10px' }}>
-                                Cancel
-                            </button>
-                        )}
-                    </form>
-                </div>
-
-                <div className="appt-list-card">
-                    <h3>Scheduled Appointments</h3>
-                    {loading ? <p>Loading...</p> : (
-                        <table className="appt-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Customer</th>
-                                    <th>Service</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {appointments.map(a => (
-                                    <tr key={a.appointmentId}>
-                                        <td>{new Date(a.appointmentTime).toLocaleString()}</td>
-                                        <td>{a.customer.fullName}</td>
-                                        <td>{a.serviceType}</td>
-                                        <td>
-                                            <span className={`status-badge ${a.status.toLowerCase()}`}>{a.status}</span>
-                                        </td>
-                                        <td>
-                                            <button onClick={() => handleEdit(a)} className="action-btn edit">Edit</button>
-                                            <button onClick={() => handleDelete(a.appointmentId)} className="action-btn delete">Cancel</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-            </div>
+      <div className="staff-filter-bar">
+        <div className="staff-filter-group">
+          <div className="staff-chips" role="group" aria-label="Filter by status">
+            {STATUSES.map((s) => (
+              <button key={s} type="button" className={`staff-chip${status === s ? " active" : ""}`} aria-pressed={status === s} onClick={() => setStatus(s)}>
+                {s}
+              </button>
+            ))}
+          </div>
+          <input className="staff-input staff-search" type="search" placeholder="Search customer, service or staff" aria-label="Search appointments" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-    );
+        <select className="staff-input" aria-label="Period" value={period} onChange={(e) => setPeriod(e.target.value)}>
+          {APPT_PERIODS.map((p) => (
+            <option key={p.id} value={p.id}>{p.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {loading ? (
+        <p>Loading appointments...</p>
+      ) : (
+        <>
+          <div className="table-scroll">
+            <table className="staff-table nowrap-table">
+              <thead>
+                <tr>
+                  <th>Date &amp; time</th>
+                  <th>Customer</th>
+                  <th>Service</th>
+                  <th>Staff</th>
+                  <th>Status</th>
+                  <th className="staff-th-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.map((a) => {
+                  const st = statusOf(a);
+                  return (
+                    <tr key={a.appointmentId}>
+                      <td>
+                        {new Date(a.appointmentTime).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                        <span className="cell-sub">{new Date(a.appointmentTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
+                      </td>
+                      <td className="staff-cell-strong">{a.customer ? a.customer.fullName : <span className="staff-cell-muted">Walk-in</span>}</td>
+                      <td>{a.serviceType}</td>
+                      <td>{a.assignedStaff ? a.assignedStaff.fullName : <span className="staff-cell-muted">Unassigned</span>}</td>
+                      <td><span className={`status-badge ${st.toLowerCase()}`}>{st.charAt(0) + st.slice(1).toLowerCase()}</span></td>
+                      <td className="staff-row-actions">
+                        {st === "BOOKED" && (
+                          <>
+                            <button className="dashboard-btn-edit" onClick={() => openDialog(a)}>Reschedule</button>
+                            <button className="dashboard-btn-delete" onClick={() => handleCancel(a)}>Cancel</button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {rows.length === 0 && (
+                  <tr className="empty-row">
+                    <td colSpan="6">{appointments.length === 0 ? "No appointments yet. Book the first one." : "No appointments match your filters."}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} total={total} onPage={setPage} />
+        </>
+      )}
+
+      {dialogOpen && (
+        <div className="modal-overlay" onClick={closeDialog}>
+          <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="appt-dialog-title" onClick={(e) => e.stopPropagation()}>
+            <h3 id="appt-dialog-title">{editing ? "Reschedule appointment" : "Book appointment"}</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="appt-customer">Customer</label>
+                <select id="appt-customer" className="staff-input" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })} required disabled={!!editing}>
+                  <option value="">Select customer</option>
+                  {customers.map((c) => (
+                    <option key={c.customerId} value={c.customerId}>{c.fullName} {c.phone ? `(${c.phone})` : ""}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="appt-service">Service</label>
+                <select id="appt-service" className="staff-input" value={form.serviceType} onChange={(e) => setForm({ ...form, serviceType: e.target.value })} required>
+                  <option value="">Select service</option>
+                  {services.map((s) => (
+                    <option key={s.serviceId} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label htmlFor="appt-date">Date</label>
+                  <input id="appt-date" type="date" className="staff-input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="appt-time">Time</label>
+                  <input id="appt-time" type="time" className="staff-input" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} required />
+                </div>
+              </div>
+              <label className="form-check">
+                <input type="checkbox" checked={form.applyLoyalty} onChange={(e) => setForm({ ...form, applyLoyalty: e.target.checked })} />
+                Apply loyalty / add points
+              </label>
+              <div className="modal-actions">
+                <button type="button" className="staff-btn staff-btn-secondary" onClick={closeDialog}>Close</button>
+                <button type="submit" className="staff-btn staff-btn-primary" disabled={saving}>
+                  {saving ? "Saving…" : editing ? "Save changes" : "Book appointment"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default AppointmentManagement;
