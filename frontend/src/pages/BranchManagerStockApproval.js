@@ -7,6 +7,7 @@ import {
 import { useAuth } from "../context/AuthContext";  // Import AuthContext
 import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 
 export default function BranchManagerStockApproval() {
   
@@ -17,6 +18,7 @@ export default function BranchManagerStockApproval() {
 
   /* -------------------- STATE -------------------- */
   const [requests, setRequests] = useState([]);
+  const { page, setPage, pageItems } = usePagination(requests);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -151,6 +153,7 @@ export default function BranchManagerStockApproval() {
           <p style={{ fontSize: 18 }}>No stock requests found for your branch</p>
         </div>
       ) : (
+        <>
         <table className="adminusers-table" border="1" width="100%" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: '#f0f0f0' }}>
@@ -164,7 +167,7 @@ export default function BranchManagerStockApproval() {
             </tr>
           </thead>
           <tbody>
-            {requests.map((r) => (
+            {pageItems.map((r) => (
               <tr key={r.requestId}>
                 <td style={{ padding: 10 }}>{r.requestId}</td>
                 <td style={{ padding: 10 }}>{r.product?.productName || 'N/A'}</td>
@@ -211,6 +214,8 @@ export default function BranchManagerStockApproval() {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} total={requests.length} onPage={setPage} />
+        </>
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import {
   getInventoryByProductAndManager
 } from "../api/productApi";
 import { createStockRequest } from "../api/stockRequestApi";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import { useAuth } from "../context/AuthContext";  // Import AuthContext
 import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
@@ -23,6 +24,7 @@ export default function ProductManagementPage() {
   /* -------------------- STATE -------------------- */
 
   const [products, setProducts] = useState([]);
+  const { page, setPage, pageItems: pageProducts } = usePagination(products);
   const [inventory, setInventory] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -282,12 +284,12 @@ export default function ProductManagementPage() {
               </td>
             </tr>
           ) : (
-            products.map(p => (
+            pageProducts.map(p => (
               <tr key={p.productId}>
                 <td style={{ padding: 10 }}>{p.productId}</td>
                 <td style={{ padding: 10 }}>{p.productName}</td>
                 <td style={{ padding: 10 }}>{p.brand}</td>
-                <td style={{ padding: 10 }}>${p.unitPrice}</td>
+                <td style={{ padding: 10 }}>Rs. {p.unitPrice}</td>
                 <td style={{ padding: 10 }}>{p.lowStockLimit}</td>
                 <td style={{ padding: 10 }}>
                   <button 
@@ -314,6 +316,7 @@ export default function ProductManagementPage() {
           )}
         </tbody>
       </table>
+      <Pagination page={page} total={products.length} onPage={setPage} />
 
       {/* ---------- INVENTORY TABLE ---------- */}
       {selectedProduct && (

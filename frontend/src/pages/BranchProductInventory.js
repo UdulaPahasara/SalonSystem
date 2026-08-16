@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getInventoryByBranch } from "../api/productApi";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import "../components/DashboardLayout.css";
 
 export default function BranchProductInventory() {
@@ -20,6 +21,8 @@ export default function BranchProductInventory() {
     }
   }, [branchId]);
 
+  const { page, setPage, pageItems } = usePagination(inventory);
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-content">
@@ -34,6 +37,7 @@ export default function BranchProductInventory() {
         ) : inventory.length === 0 ? (
           <p>No inventory found for this branch.</p>
         ) : (
+          <>
           <table className="dashboard-table">
             <thead>
               <tr>
@@ -43,7 +47,7 @@ export default function BranchProductInventory() {
               </tr>
             </thead>
             <tbody>
-              {inventory.map((item) => (
+              {pageItems.map((item) => (
                 <tr key={item.inventoryId}>
                   <td>{item.productName}</td>
                   <td>Rs. {item.unitPrice}</td>
@@ -52,6 +56,8 @@ export default function BranchProductInventory() {
               ))}
             </tbody>
           </table>
+          <Pagination page={page} total={inventory.length} onPage={setPage} />
+          </>
         )}
       </div>
     </div>
