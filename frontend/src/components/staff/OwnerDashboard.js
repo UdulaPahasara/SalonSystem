@@ -5,6 +5,7 @@ import { getUsers, getAllTransactions, getStaffSalaryStatus } from "../../api/us
 import { getAllAppointments } from "../../api/appointmentApi";
 import { getAllStockRequests } from "../../api/stockRequestApi";
 import { getInventoryByBranch } from "../../api/productApi";
+import BarChart from "./BarChart";
 import "../../styles/Dashboard.css";
 
 const LOW_STOCK_LIMIT = 5; // matches the red highlight in Branch Inventory
@@ -29,75 +30,6 @@ function lastSevenDays(transactions) {
     days.push({ date: d, total });
   }
   return days;
-}
-
-function SalesChart({ days }) {
-  const [active, setActive] = useState(null);
-  const max = Math.max(...days.map((d) => d.total), 0);
-  const top = max === 0 ? 1 : Math.ceil(max / 1000) * 1000; // round the axis up to a tidy figure
-  const ticks = [top, top / 2, 0];
-
-  if (max === 0) {
-    return <p className="dash-empty">No sales recorded in the last 7 days.</p>;
-  }
-
-  return (
-    <div className="dash-chart">
-      <div className="dash-chart-axis" aria-hidden="true">
-        {ticks.map((t) => (
-          <span key={t}>{t >= 1000 ? `${t / 1000}k` : t}</span>
-        ))}
-      </div>
-      <div className="dash-chart-plot">
-        <div className="dash-chart-lines" aria-hidden="true">
-          {ticks.map((t) => (
-            <i key={t} style={{ bottom: `${(t / top) * 100}%` }} />
-          ))}
-        </div>
-        {days.map((d, i) => {
-          const label = d.date.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" });
-          return (
-            <div
-              key={d.date.toISOString()}
-              className="dash-chart-col"
-              tabIndex={0}
-              aria-label={`${label}: ${rs(d.total)}`}
-              onMouseEnter={() => setActive(i)}
-              onMouseLeave={() => setActive(null)}
-              onFocus={() => setActive(i)}
-              onBlur={() => setActive(null)}
-            >
-              {active === i && (
-                <span
-                  className="dash-chart-tip"
-                  role="status"
-                  style={{ bottom: `calc(${Math.min((d.total / top) * 100, 78)}% + 6px)` }}
-                >
-                  <b>{rs(d.total)}</b>
-                  {label}
-                </span>
-              )}
-              <span className="dash-chart-bar" style={{ height: `${(d.total / top) * 100}%` }} />
-              <span className="dash-chart-day">
-                {d.date.toLocaleDateString(undefined, { weekday: "short" })}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      <table className="sr-only">
-        <caption>Sales per day, last 7 days</caption>
-        <tbody>
-          {days.map((d) => (
-            <tr key={d.date.toISOString()}>
-              <th>{d.date.toDateString()}</th>
-              <td>{rs(d.total)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
 }
 
 export default function OwnerDashboard({ userName }) {
@@ -220,7 +152,21 @@ export default function OwnerDashboard({ userName }) {
               <h2>Sales — last 7 days</h2>
               <Link to="/reports">Reports →</Link>
             </div>
-            {view ? <SalesChart days={view.days} /> : <p className="dash-empty">Loading…</p>}
+            {view ? (
+              <BarChart
+                caption="Sales per day, last 7 days"
+                format={rs}
+                emptyText="No sales recorded in the last 7 days."
+                data={view.days.map((d) => ({
+                  key: d.date.toISOString(),
+                  label: d.date.toLocaleDateString(undefined, { weekday: "short" }),
+                  value: d.total,
+                  tip: d.date.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" }),
+                }))}
+              />
+            ) : (
+              <p className="dash-empty">Loading…</p>
+            )}
           </section>
 
           <section className="dash-card">
