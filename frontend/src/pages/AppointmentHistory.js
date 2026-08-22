@@ -1,74 +1,73 @@
-import React, { useState, useEffect } from 'react';
-import { getAllAppointments } from '../api/appointmentApi';
-import { useAuth } from '../context/AuthContext';
-import './TransactionHistory.css'; // Reusing similar table styles
+import React, { useState, useEffect } from "react";
+import { getAllAppointments } from "../api/appointmentApi";
+import { useAuth } from "../context/AuthContext";
+import PageHeader from "../components/staff/PageHeader";
+import { getStaffHomePath } from "../utils/staffNav";
+import "../components/DashboardLayout.css";
 
-const AppointmentHistory = () => {
-    const { userRole, branchId } = useAuth();
-    const [appointments, setAppointments] = useState([]);
-    const [loading, setLoading] = useState(true);
+export default function AppointmentHistory() {
+  const { userRole, branchId } = useAuth();
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-    useEffect(() => {
-        fetchAppointments();
-    }, []);
+  useEffect(() => {
+    // Owner sees every branch; Branch Manager sees only their own.
+    const targetBranchId = userRole === "Owner" ? null : branchId;
+    getAllAppointments(targetBranchId)
+      .then(setAppointments)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [userRole, branchId]);
 
-    const fetchAppointments = async () => {
-        try {
-            setLoading(true);
-            // If Owner, pass null to get all. If Branch Manager, pass branchId.
-            const targetBranchId = (userRole === 'Owner') ? null : branchId;
-            const data = await getAllAppointments(targetBranchId);
-            setAppointments(data);
-        } catch (error) {
-            console.error("Error fetching appointments:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  return (
+    <div className="staff-page">
+      <PageHeader
+        title="Appointment History"
+        subtitle={userRole === "Owner" ? "Bookings across all branches." : "Bookings at your branch."}
+        backTo={getStaffHomePath(userRole)}
+      />
 
-    return (
-        <div className="history-container">
-            <h2>Appointment History</h2>
-            {loading ? <p>Loading...</p> : (
-                <table className="history-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Date & Time</th>
-                            <th>Customer</th>
-                            <th>Service</th>
-                            <th>Status</th>
-                            <th>Assigned Staff</th>
-                            <th>Branch ID</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {appointments.length > 0 ? (
-                            appointments.map((appt) => (
-                                <tr key={appt.appointmentId}>
-                                    <td>{appt.appointmentId}</td>
-                                    <td>{new Date(appt.appointmentTime).toLocaleString()}</td>
-                                    <td>{appt.customer ? appt.customer.fullName : 'N/A'}</td>
-                                    <td>{appt.serviceType}</td>
-                                    <td>
-                                        <span className={`status-badge ${appt.status ? appt.status.toLowerCase() : ''}`}>
-                                            {appt.status || 'BOOKED'}
-                                        </span>
-                                    </td>
-                                    <td>{appt.assignedStaff ? appt.assignedStaff.fullName : 'Unassigned'}</td>
-                                    <td>{appt.branch ? appt.branch.id : 'N/A'}</td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="7">No appointments found.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            )}
+      {loading ? (
+        <p>Loading appointments...</p>
+      ) : error ? (
+        <div className="staff-empty-state">
+          <h3>Couldn't load appointments</h3>
+          <p>Check that the server is running and try again.</p>
         </div>
-    );
-};
-
-export default AppointmentHistory;
+      ) : (
+        <table className="staff-table">
+          <thead>
+            <tr>
+              <th>Date &amp; time</th>
+              <th>Customer</th>
+              <th>Service</th>
+              <th>Status</th>
+              <th>Assigned staff</th>
+              <th>Branch</th>
+            </tr>
+          </thead>
+          <tbody>
+            {appointments.map((appt) => (
+              <tr key={appt.appointmentId}>
+                <td>{new Date(appt.appointmentTime).toLocaleString()}</td>
+                <td>{appt.customer ? appt.customer.fullName : "Walk-in"}</td>
+                <td>{appt.serviceType}</td>
+                <td>
+                  <span className={`status-badge ${(appt.status || "BOOKED").toLowerCase()}`}>
+                    {appt.status || "BOOKED"}
+                  </span>
+                </td>
+                <td>{appt.assignedStaff ? appt.assignedStaff.fullName : "Unassigned"}</td>
+                <td>{appt.branch ? appt.branch.branchName : "—"}</td>
+              </tr>
+            ))}
+            {appointments.length === 0 && (
+              <tr className="empty-row"><td colSpan="6">No appointments found.</td></tr>
+            )}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
