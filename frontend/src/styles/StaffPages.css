@@ -44,3 +44,20 @@
 .form-check { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; color: #53112f; font-weight: 500; cursor: pointer; }
 @media (max-width: 480px) { .form-row-2 { grid-template-columns: 1fr; } }
 .msg-cell { max-width: 460px; white-space: pre-wrap; line-height: 1.45; }
+
+/* Reports */
+.report-period { margin: 0 0 1rem; color: #735c66; font-size: 0.9rem; font-weight: 600; }
+.report-custom { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; margin: -0.5rem 0 1rem; }
+.report-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin-top: 1.25rem; align-items: start; }
+.report-note { margin: 1.25rem 0 0; color: #806774; font-size: 0.82rem; }
+.rank-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.95rem; }
+.rank-row { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) auto; gap: 0.25rem 0.75rem; align-items: baseline; }
+.rank-row-flat { grid-template-columns: minmax(0, 1fr) auto; }
+.rank-n { color: #806774; font-variant-numeric: tabular-nums; }
+.rank-name { font-weight: 600; color: #3a0a22; overflow-wrap: anywhere; }
+.rank-val { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank-meta { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.7rem; color: #806774; font-size: 0.82rem; }
+.rank-row:not(.rank-row-flat) .rank-meta { grid-column: 2 / -1; }
+.rank-bar { flex: 0 0 38%; height: 6px; border-radius: 3px; background: #f0e8e2; overflow: hidden; }
+.rank-bar i { display: block; height: 100%; border-radius: 3px; background: #a91a58; }
+@media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
