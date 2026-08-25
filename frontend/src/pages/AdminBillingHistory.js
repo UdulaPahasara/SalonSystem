@@ -53,7 +53,7 @@ export default function AdminBillingHistory({ fixedBranchId, title = "Billing & 
   const kpis = [
     { label: "Total sales", value: rs(total), hint: "For the selected filters" },
     { label: "Transactions", value: rows.length, hint: "Completed checkouts" },
-    { label: "Average sale", value: rs(rows.length ? total / rows.length : 0), hint: "Per transaction" },
+    { label: "Average sale", value: rs(Math.round(rows.length ? total / rows.length : 0)), hint: "Per transaction" },
     { label: "Card payments", value: rows.length ? `${Math.round((cardCount / rows.length) * 100)}%` : "—", hint: `${cardCount} of ${rows.length}` },
   ];
 
