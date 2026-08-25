@@ -1,5 +1,6 @@
 package Salon.SalonManagementSystem.service;
 
+import Salon.SalonManagementSystem.model.Branch;
 import Salon.SalonManagementSystem.model.SalaryPayment;
 import Salon.SalonManagementSystem.model.ServiceStaff;
 import Salon.SalonManagementSystem.model.Users;
@@ -99,7 +100,45 @@ public class SalaryService {
         result.add(map);
     }
 
+    // Past payments for a range of months ("YYYY-MM" to "YYYY-MM", inclusive), newest first.
+    public List<Map<String, Object>> getPaymentHistory(String fromMonth, String toMonth, Integer branchId) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (SalaryPayment p : salaryRepository.findByPaymentMonthBetween(fromMonth, toMonth)) {
+            Branch branch = p.getUser() != null ? p.getUser().getBranch()
+                    : p.getServiceStaff() != null ? p.getServiceStaff().getBranch() : null;
+            if (branchId != null && (branch == null || !branchId.equals(branch.getId()))) {
+                continue;
+            }
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", p.getId());
+            map.put("month", p.getPaymentMonth());
+            map.put("paymentDate", p.getPaymentDate());
+            map.put("amount", p.getAmount());
+            map.put("type", p.getUser() != null ? "USER" : "SERVICE_STAFF");
+            map.put("staffId", p.getUser() != null ? p.getUser().getId() : p.getServiceStaff().getId());
+            map.put("name", p.getUser() != null ? p.getUser().getFullName() : p.getServiceStaff().getFullName());
+            map.put("role", p.getUser() != null && p.getUser().getRole() != null ? p.getUser().getRole().getRoleName()
+                    : p.getServiceStaff() != null ? p.getServiceStaff().getRole() : null);
+            map.put("branch", branch != null ? branch.getBranchName() : "Head Office");
+            result.add(map);
+        }
+        result.sort((a, b) -> {
+            int byMonth = ((String) b.get("month")).compareTo((String) a.get("month"));
+            return byMonth != 0 ? byMonth : String.valueOf(a.get("name")).compareTo(String.valueOf(b.get("name")));
+        });
+        return result;
+    }
+
     public SalaryPayment paySalary(String type, Integer id, Double amount, String month) {
+        if (amount == null || amount <= 0) {
+            throw new RuntimeException("Set a base salary before paying");
+        }
+        boolean alreadyPaid = "USER".equals(type)
+                ? salaryRepository.findByUser_Id(id).stream().anyMatch(p -> month.equals(p.getPaymentMonth()))
+                : salaryRepository.findByServiceStaff_Id(id).stream().anyMatch(p -> month.equals(p.getPaymentMonth()));
+        if (alreadyPaid) {
+            throw new RuntimeException("Already paid for " + month);
+        }
         SalaryPayment payment = new SalaryPayment();
         payment.setAmount(amount);
         payment.setPaymentMonth(month);
