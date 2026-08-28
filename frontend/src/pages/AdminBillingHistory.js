@@ -6,7 +6,9 @@ import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/staff/PageHeader";
 import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
-import { rs, PERIODS, inPeriod, downloadCsv } from "../utils/format";
+import { rs, downloadCsv } from "../utils/format";
+import { DEFAULT_PERIOD, inPeriod, periodKey } from "../utils/period";
+import PeriodFilter from "../components/staff/PeriodFilter";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
 import "../styles/StaffPages.css";
@@ -22,7 +24,7 @@ export default function AdminBillingHistory({ fixedBranchId, title = "Billing & 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [method, setMethod] = useState("All");
-  const [period, setPeriod] = useState("all");
+  const [period, setPeriod] = useState(DEFAULT_PERIOD);
   const [open, setOpen] = useState(null);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function AdminBillingHistory({ fixedBranchId, title = "Billing & 
     [transactions, period, method]
   );
 
-  const { page, setPage, pageItems, total: rowCount } = usePagination(rows, [method, period, branchId].join("|"));
+  const { page, setPage, pageItems, total: rowCount } = usePagination(rows, [method, periodKey(period), branchId].join("|"));
   const total = rows.reduce((s, t) => s + Number(t.totalAmount || 0), 0);
   const cardCount = rows.filter((t) => (t.paymentMethod || "").toUpperCase() === "CARD").length;
   const kpis = [
@@ -96,11 +98,7 @@ export default function AdminBillingHistory({ fixedBranchId, title = "Billing & 
           ))}
         </div>
         <div className="staff-filter-group">
-          <select className="staff-input" aria-label="Period" value={period} onChange={(e) => setPeriod(e.target.value)}>
-            {PERIODS.map((p) => (
-              <option key={p.id} value={p.id}>{p.label}</option>
-            ))}
-          </select>
+          <PeriodFilter value={period} onChange={setPeriod} />
           {!fixedBranchId && (
             <select className="staff-input" aria-label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">All branches</option>

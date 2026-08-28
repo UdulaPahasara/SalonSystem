@@ -5,7 +5,9 @@ import { useAuth } from "../context/AuthContext";
 import PageHeader from "../components/staff/PageHeader";
 import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
-import { rs, PERIODS, inPeriod, downloadCsv } from "../utils/format";
+import { rs, downloadCsv } from "../utils/format";
+import { DEFAULT_PERIOD, inPeriod, periodKey } from "../utils/period";
+import PeriodFilter from "../components/staff/PeriodFilter";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
 import "../styles/StaffPages.css";
@@ -38,7 +40,7 @@ export default function ServiceHistory() {
   const [branches, setBranches] = useState([]);
   const [branchId, setBranchId] = useState("");
   const [category, setCategory] = useState("All");
-  const [period, setPeriod] = useState("all");
+  const [period, setPeriod] = useState(DEFAULT_PERIOD);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -69,7 +71,7 @@ export default function ServiceHistory() {
     );
   }, [rowsAll, period, category, query]);
 
-  const { page, setPage, pageItems, total } = usePagination(rows, [period, category, query, branchId].join("|"));
+  const { page, setPage, pageItems, total } = usePagination(rows, [periodKey(period), category, query, branchId].join("|"));
 
   const performed = rows.reduce((s, r) => s + r.qty, 0);
   const revenue = rows.reduce((s, r) => s + r.revenue, 0);
@@ -129,11 +131,7 @@ export default function ServiceHistory() {
           <input className="staff-input staff-search" type="search" placeholder="Search service or customer" aria-label="Search services" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         <div className="staff-filter-group">
-          <select className="staff-input" aria-label="Period" value={period} onChange={(e) => setPeriod(e.target.value)}>
-            {PERIODS.map((p) => (
-              <option key={p.id} value={p.id}>{p.label}</option>
-            ))}
-          </select>
+          <PeriodFilter value={period} onChange={setPeriod} />
           {isOwner && (
             <select className="staff-input" aria-label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
               <option value="">All branches</option>

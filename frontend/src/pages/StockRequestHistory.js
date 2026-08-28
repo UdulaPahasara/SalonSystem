@@ -4,7 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import PageHeader from "../components/staff/PageHeader";
 import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
-import { PERIODS, inPeriod } from "../utils/format";
+import { DEFAULT_PERIOD, inPeriod, periodKey } from "../utils/period";
+import PeriodFilter from "../components/staff/PeriodFilter";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
 import "../styles/StaffPages.css";
@@ -17,7 +18,7 @@ export default function StockRequestHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [status, setStatus] = useState("All");
-  const [period, setPeriod] = useState("all");
+  const [period, setPeriod] = useState(DEFAULT_PERIOD);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -33,13 +34,13 @@ export default function StockRequestHistory() {
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return requests.filter((r) => {
-      if (period !== "all" && !(r.createdAt && inPeriod(r.createdAt, period))) return false;
+      if (period.period !== "all" && !(r.createdAt && inPeriod(r.createdAt, period))) return false;
       if (status !== "All" && (r.status || "").toUpperCase() !== status.toUpperCase()) return false;
       return !q || [r.product?.productName, r.product?.brand, r.requestedBy?.fullName, r.branch?.branchName].some((v) => (v || "").toLowerCase().includes(q));
     });
   }, [requests, status, period, query]);
 
-  const { page, setPage, pageItems, total } = usePagination(rows, [status, period, query].join("|"));
+  const { page, setPage, pageItems, total } = usePagination(rows, [status, periodKey(period), query].join("|"));
   const count = (s) => requests.filter((r) => (r.status || "").toUpperCase() === s).length;
   const kpis = [
     { label: "Total requests", value: requests.length, hint: "All time" },
@@ -77,11 +78,7 @@ export default function StockRequestHistory() {
           </div>
           <input className="staff-input staff-search" type="search" placeholder="Search product, brand or branch" aria-label="Search requests" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <select className="staff-input" aria-label="Period" value={period} onChange={(e) => setPeriod(e.target.value)}>
-          {PERIODS.map((p) => (
-            <option key={p.id} value={p.id}>{p.label}</option>
-          ))}
-        </select>
+        <PeriodFilter value={period} onChange={setPeriod} />
       </div>
 
       {loading ? (
