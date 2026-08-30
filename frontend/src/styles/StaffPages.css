@@ -65,3 +65,38 @@
 /* Timeframe filter */
 .period-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; }
 .period-filter .staff-input { width: auto; }
+
+/* Payroll register */
+.register-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; margin-top: 1.5rem; }
+.register-head .staff-section-title { margin: 0; }
+.register-table th, .register-table td { padding-left: 0.7rem; padding-right: 0.7rem; }
+.register-table .sticky-col { position: sticky; left: 0; z-index: 1; background: #fffdf9; box-shadow: 1px 0 0 #e8ddd5; min-width: 190px; text-align: left; }
+.register-head .staff-search { width: auto; flex: 0 1 340px; }
+.register-table thead .sticky-col { background: #f2ebe7; }
+.register-table tfoot td { border-top: 2px solid #e2d7cf; background: #faf6f3; padding: 0.85rem 1rem; }
+.register-table tfoot .sticky-col { background: #faf6f3; }
+.reg-paid { color: #166534; font-weight: 600; }
+.reg-unpaid { padding: 0.15rem 0.55rem; border: 1px solid #f3d9a4; border-radius: 999px; background: #fef3c7; color: #92400e; font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+.reg-unpaid:hover { background: #fde8a8; }
+.tab-bar { display: flex; gap: 0.25rem; margin: 0 0 1.25rem; border-bottom: 1px solid #e2d7cf; }
+.tab-btn { padding: 0.7rem 1.1rem; border: 0; border-bottom: 3px solid transparent; background: none; color: #735c66; font: inherit; font-weight: 600; cursor: pointer; margin-bottom: -1px; }
+.tab-btn:hover { color: #71113d; }
+.tab-btn.active { color: #53112f; border-bottom-color: #a91a58; }
+.month-nav { display: inline-flex; align-items: center; gap: 0.4rem; }
+.month-nav .staff-input { width: auto; }
+.icon-btn { width: 2.5rem; height: 2.5rem; border: 1px solid #d8c9c0; border-radius: 7px; background: #fffdf9; color: #71113d; font-size: 1.1rem; cursor: pointer; }
+.icon-btn:hover:not(:disabled) { background: #f5e9ed; }
+
+/* Export dialog */
+.export-dialog { max-width: 560px; }
+.export-group { margin: 0 0 1rem; padding: 0; border: 0; }
+.export-group legend { margin-bottom: 0.4rem; padding: 0; color: #53112f; font-size: 0.88rem; font-weight: 600; }
+.export-formats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.export-format { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.75rem 0.85rem; border: 1px solid #d8c9c0; border-radius: 8px; background: #fffdf9; cursor: pointer; }
+.export-format.selected { border-color: #a91a58; background: #fbf3f5; box-shadow: 0 0 0 2px rgba(169, 26, 88, 0.12); }
+.export-format span { display: grid; gap: 0.1rem; }
+.export-format small { color: #806774; font-size: 0.8rem; }
+.export-summary { margin: -0.25rem 0 1rem; color: #735c66; font-size: 0.85rem; }
+.export-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem; }
+.form-check.disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 520px) { .export-formats, .export-sections { grid-template-columns: 1fr; } }

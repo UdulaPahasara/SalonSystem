@@ -20,6 +20,10 @@ export const getStaffSalaryStatus = (month, branchId) => {
   return api.get("/salary/staff-status", { params }).then((r) => r.data);
 };
 
+// params: { fromMonth: "YYYY-MM", toMonth: "YYYY-MM", branchId? }
+export const getSalaryPayments = (params) =>
+  api.get("/salary/payments", { params }).then((r) => r.data);
+
 export const paySalary = (payload) =>
   api.post("/salary/pay", payload).then((r) => r.data);
 
