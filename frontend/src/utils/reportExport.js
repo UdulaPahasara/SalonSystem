@@ -22,43 +22,44 @@ export async function exportReportExcel(report) {
     ...rows.map((r, i) => [int(i + 1), { value: r.name }, int(r.qty), num(r.revenue), pct(r.share)]),
   ];
 
-  const sheets = [
-    {
+  const sec = report.sections || {};
+  const sheets = [];
+  if (sec.summary !== false) {
+    sheets.push({
       sheet: "Summary",
       columns: [{ width: 28 }, { width: 34 }],
       data: [
         [{ value: `${SALON_INFO.name} - Sales Report`, fontWeight: "bold", fontSize: 16 }],
         [{ value: "Period" }, { value: report.periodLabel }],
         [{ value: "Branch" }, { value: report.branchName }],
+        [{ value: "Grouped by" }, { value: report.revenueTitle === "Month" ? "Month" : "Day" }],
         [{ value: "Generated" }, { value: report.generatedAt }],
         [],
         [head("Measure"), head("Value")],
         ...report.kpis.map((k) => [{ value: k.label }, { value: k.value }]),
       ],
-    },
-    {
+    });
+  }
+  if (sec.revenue !== false) {
+    sheets.push({
       sheet: "Revenue",
       columns: [{ width: 18 }, { width: 16 }, { width: 18 }],
+      stickyRowsCount: 1,
       data: [
         [head(report.revenueTitle), head("Transactions"), head("Revenue (Rs.)")],
         ...report.revenueRows.map((r) => [{ value: r.label }, int(r.count), num(r.revenue)]),
         [{ value: "Total", fontWeight: "bold" }, { ...int(report.revenueRows.reduce((s, r) => s + r.count, 0)), fontWeight: "bold" }, { ...num(report.revenueRows.reduce((s, r) => s + r.revenue, 0)), fontWeight: "bold" }],
       ],
-    },
-    { sheet: "Top Services", columns: [{ width: 8 }, { width: 38 }, { width: 10 }, { width: 18 }, { width: 16 }], data: ranked(report.services, "Service") },
-    { sheet: "Top Products", columns: [{ width: 8 }, { width: 38 }, { width: 10 }, { width: 18 }, { width: 16 }], data: ranked(report.products, "Product") },
-    {
-      sheet: "Breakdown",
-      columns: [{ width: 36 }, { width: 16 }, { width: 18 }, { width: 16 }],
-      data: [
-        [head("Payment method"), head("Transactions"), head("Revenue (Rs.)"), head("Share")],
-        ...report.payments.map((p) => [{ value: p.method }, int(p.count), num(p.revenue), pct(p.share)]),
-        [],
-        [head("Branch"), head("Transactions"), head("Revenue (Rs.)"), head("Share")],
-        ...report.branches.map((b) => [{ value: b.name }, int(b.count), num(b.revenue), pct(b.share)]),
-      ],
-    },
-  ];
+    });
+  }
+  if (sec.services !== false) sheets.push({ sheet: "Top Services", columns: [{ width: 8 }, { width: 38 }, { width: 10 }, { width: 18 }, { width: 16 }], data: ranked(report.services, "Service") });
+  if (sec.products !== false) sheets.push({ sheet: "Top Products", columns: [{ width: 8 }, { width: 38 }, { width: 10 }, { width: 18 }, { width: 16 }], data: ranked(report.products, "Product") });
+  if (sec.payments !== false || sec.branches !== false) {
+    const data = [];
+    if (sec.payments !== false) data.push([head("Payment method"), head("Transactions"), head("Revenue (Rs.)"), head("Share")], ...report.payments.map((p) => [{ value: p.method }, int(p.count), num(p.revenue), pct(p.share)]), []);
+    if (sec.branches !== false && report.branches.length) data.push([head("Branch"), head("Transactions"), head("Revenue (Rs.)"), head("Share")], ...report.branches.map((b) => [{ value: b.name }, int(b.count), num(b.revenue), pct(b.share)]));
+    sheets.push({ sheet: "Breakdown", columns: [{ width: 36 }, { width: 16 }, { width: 18 }, { width: 16 }], data });
+  }
 
   await writeExcelFile(sheets).toFile(`sales-report-${stamp()}.xlsx`);
 }
@@ -87,9 +88,10 @@ export async function exportReportPdf(report) {
   doc.setDrawColor(226, 215, 207);
   doc.line(M, 82, W - M, 82);
 
+  const sec = report.sections || {};
   // KPI strip
   const boxW = (W - M * 2 - 12 * 3) / 4;
-  report.kpis.slice(0, 4).forEach((k, i) => {
+  (sec.summary !== false ? report.kpis.slice(0, 4) : []).forEach((k, i) => {
     const x = M + i * (boxW + 12);
     doc.setDrawColor(226, 215, 207);
     doc.roundedRect(x, 96, boxW, 52, 4, 4);
@@ -103,7 +105,7 @@ export async function exportReportPdf(report) {
   });
 
   const style = { headStyles: { fillColor: PLUM, textColor: 255, fontSize: 9 }, bodyStyles: { fontSize: 9, textColor: [58, 10, 34] }, alternateRowStyles: { fillColor: [250, 246, 243] }, margin: { left: M, right: M }, theme: "grid", styles: { lineColor: [226, 215, 207], lineWidth: 0.5 } };
-  let y = 168;
+  let y = sec.summary !== false ? 168 : 100;
   const section = (title) => {
     if (y > 740) { doc.addPage(); y = 50; }
     doc.setFont("helvetica", "bold");
@@ -130,6 +132,7 @@ export async function exportReportPdf(report) {
     y = doc.lastAutoTable.finalY + 24;
   };
 
+  if (sec.revenue !== false) {
   section(report.revenueTitle === "Date" ? "Revenue by day" : "Revenue by month");
   table(
     [report.revenueTitle, "Transactions", "Revenue"],
@@ -137,13 +140,20 @@ export async function exportReportPdf(report) {
      ["Total", report.revenueRows.reduce((s, r) => s + r.count, 0), rsText(report.revenueRows.reduce((s, r) => s + r.revenue, 0))]],
     { columnStyles: { 1: { halign: "right" }, 2: { halign: "right" } }, didParseCell: (d) => { if (d.row.index === report.revenueRows.length && d.section === "body") d.cell.styles.fontStyle = "bold"; } }
   );
+  }
+  if (sec.services !== false) {
   section("Top services");
   table(["#", "Service", "Units", "Revenue", "Share"], report.services.length ? report.services.map((r, i) => [i + 1, r.name, r.qty, rsText(r.revenue), `${r.share.toFixed(1)}%`]) : [["", "No services sold in this period", "", "", ""]], { columnStyles: { 0: { cellWidth: 26 }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } } });
+  }
+  if (sec.products !== false) {
   section("Top products");
   table(["#", "Product", "Units", "Revenue", "Share"], report.products.length ? report.products.map((r, i) => [i + 1, r.name, r.qty, rsText(r.revenue), `${r.share.toFixed(1)}%`]) : [["", "No products sold in this period", "", "", ""]], { columnStyles: { 0: { cellWidth: 26 }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } } });
+  }
+  if (sec.payments !== false) {
   section("Payment methods");
   table(["Method", "Transactions", "Revenue", "Share"], report.payments.map((p) => [p.method, p.count, rsText(p.revenue), `${p.share.toFixed(1)}%`]), { columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" } } });
-  if (report.branches.length > 1) {
+  }
+  if (sec.branches !== false && report.branches.length > 1) {
     section("Branches");
     table(["Branch", "Transactions", "Revenue", "Share"], report.branches.map((b) => [b.name, b.count, rsText(b.revenue), `${b.share.toFixed(1)}%`]), { columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" } } });
   }
