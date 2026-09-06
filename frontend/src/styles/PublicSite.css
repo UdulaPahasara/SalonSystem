@@ -600,3 +600,12 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+/* Small section labels: dark enough to read on light backgrounds, gold only on dark ones */
+.public-eyebrow { color: var(--malroo-wine); }
+.home-hero-eyebrow,
+.home-cta .public-eyebrow,
+.public-footer .public-eyebrow { color: var(--malroo-gold); }
+
+/* Contact links inside the footer address stay inline */
+.public-footer p a { display: inline; margin: 0; }
