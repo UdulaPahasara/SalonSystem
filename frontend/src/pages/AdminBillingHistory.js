@@ -53,7 +53,7 @@ export default function AdminBillingHistory() {
           </button>
         </div>
 
-        <div className="dashboard-form" style={{ marginBottom: "30px", maxWidth: "400px" }}>
+        <div className="dashboard-form staff-form-narrow">
           <div className="form-group">
             <label>Select Branch</label>
             <select
@@ -74,7 +74,10 @@ export default function AdminBillingHistory() {
         {loading ? (
           <p>Loading transactions...</p>
         ) : transactions.length === 0 ? (
-          <p>No transactions found.</p>
+          <div className="staff-empty-state">
+            <h3>No transactions yet</h3>
+            <p>Sales appear here after a cashier completes a checkout.</p>
+          </div>
         ) : (
           <table className="dashboard-table">
             <thead>
@@ -94,7 +97,7 @@ export default function AdminBillingHistory() {
                   <td>{t.transactionId}</td>
                   <td>{new Date(t.dateTime).toLocaleString()}</td>
                   <td>{t.branch ? t.branch.branchName : "N/A"}</td>
-                  <td>Rs. {t.totalAmount}</td>
+                  <td>Rs. {Number(t.totalAmount).toLocaleString()}</td>
                   <td>{t.paymentMethod}</td>
                   <td>{t.cashier ? t.cashier.fullName : "N/A"}</td>
                   <td>{t.customer && t.customer.loyaltyMember ? "Yes" : "No"}</td>

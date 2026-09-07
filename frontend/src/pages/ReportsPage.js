@@ -34,8 +34,8 @@ export default function ReportsPage() {
           <p>Loading reports...</p>
         ) : (
           <>
-            <h3>Top Products</h3>
-            <table className="dashboard-table" style={{ marginBottom: "24px" }}>
+            <h3 className="staff-section-title">Top products</h3>
+            <table className="dashboard-table">
               <thead>
                 <tr>
                   <th>Product</th>
@@ -48,13 +48,16 @@ export default function ReportsPage() {
                   <tr key={item.name}>
                     <td>{item.name}</td>
                     <td>{item.quantitySold}</td>
-                    <td>Rs. {item.totalRevenue}</td>
+                    <td>Rs. {Number(item.totalRevenue).toLocaleString()}</td>
                   </tr>
                 ))}
+                {topProducts.length === 0 && (
+                  <tr className="empty-row"><td colSpan="3">No product sales yet.</td></tr>
+                )}
               </tbody>
             </table>
 
-            <h3>Top Services</h3>
+            <h3 className="staff-section-title">Top services</h3>
             <table className="dashboard-table">
               <thead>
                 <tr>
@@ -68,9 +71,12 @@ export default function ReportsPage() {
                   <tr key={item.name}>
                     <td>{item.name}</td>
                     <td>{item.usageCount}</td>
-                    <td>Rs. {item.totalRevenue}</td>
+                    <td>Rs. {Number(item.totalRevenue).toLocaleString()}</td>
                   </tr>
                 ))}
+                {topServices.length === 0 && (
+                  <tr className="empty-row"><td colSpan="3">No completed services yet.</td></tr>
+                )}
               </tbody>
             </table>
           </>
