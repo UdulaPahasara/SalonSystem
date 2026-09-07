@@ -10,16 +10,14 @@ body {
   color: #2b1a22;
 }
 
-/* Global Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #a91a58;
-  border-radius: 10px;
-}
+/* No page scrollbar (scrolling still works with wheel, trackpad, touch and keys).
+   Wide tables that scroll sideways keep a slim bar so people can tell they scroll. */
+html { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar, body::-webkit-scrollbar, .staff-content::-webkit-scrollbar, .staff-sidebar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.staff-content, .staff-sidebar { scrollbar-width: none; }
+.table-scroll { scrollbar-width: thin; scrollbar-color: #d8c9c0 transparent; }
+.table-scroll::-webkit-scrollbar { height: 6px; }
+.table-scroll::-webkit-scrollbar-thumb { background: #d8c9c0; border-radius: 6px; }
 
 h1,
 h2,
