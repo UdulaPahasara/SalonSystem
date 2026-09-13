@@ -18,6 +18,9 @@ public class AppointmentController {
     @Autowired
     private AppointmentService appointmentService;
 
+    @Autowired
+    private Salon.SalonManagementSystem.repository.ServiceStaffRepository serviceStaffRepository;
+
     @PostMapping
     public ResponseEntity<?> createAppointment(@RequestBody Map<String, Object> payload) {
         try {
@@ -37,6 +40,11 @@ public class AppointmentController {
             }
 
             Appointment appt = new Appointment();
+            if (payload.get("staffId") != null) {
+                Integer staffId = ((Number) payload.get("staffId")).intValue();
+                appt.setAssignedStaff(serviceStaffRepository.findById(staffId)
+                        .orElseThrow(() -> new RuntimeException("Staff member not found")));
+            }
             appt.setServiceType(serviceType);
             appt.setAppointmentTime(LocalDateTime.parse(isoDate));
             appt.setApplyLoyalty(applyLoyalty);
@@ -57,6 +65,15 @@ public class AppointmentController {
     public ResponseEntity<?> updateAppointment(@PathVariable Integer id, @RequestBody Appointment details) {
         try {
             return ResponseEntity.ok(appointmentService.updateAppointment(id, details));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> changeStatus(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+        try {
+            return ResponseEntity.ok(appointmentService.changeStatus(id, body.get("status")));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
