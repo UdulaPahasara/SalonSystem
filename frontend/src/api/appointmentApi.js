@@ -19,3 +19,9 @@ export const updateAppointment = async (id, payload) => {
 export const deleteAppointment = async (id) => {
   await api.delete(`/appointments/${id}`);
 };
+
+// status: "COMPLETED" or "CANCELLED". The booking stays in history.
+export const setAppointmentStatus = async (id, status) => {
+  const response = await api.put(`/appointments/${id}/status`, { status });
+  return response.data;
+};

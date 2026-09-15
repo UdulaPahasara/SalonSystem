@@ -72,3 +72,18 @@
 
 /* Module cards are links now */
 a.staff-module-card { color: inherit; text-decoration: none; }
+
+/* Today's schedule */
+.schedule { margin: 0; padding: 0; list-style: none; }
+.schedule-row { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr) auto auto; align-items: center; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid #f0e8e2; }
+.schedule-row:last-child { border-bottom: 0; }
+.schedule-time { color: #a91a58; font-weight: 700; font-variant-numeric: tabular-nums; }
+.schedule-main { display: grid; min-width: 0; }
+.schedule-main strong { color: #3a0a22; }
+.schedule-main small { color: #806774; font-size: 0.84rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.schedule-action a, .schedule-action button { white-space: nowrap; }
+@media (max-width: 560px) { .schedule-row { grid-template-columns: 3.6rem minmax(0, 1fr) auto; } .schedule-action { grid-column: 2 / -1; } }
+.schedule-row-3 { grid-template-columns: 4.2rem minmax(0, 1fr); }
+.schedule-date { display: grid; line-height: 1.2; }
+.schedule-date small { color: #806774; font-weight: 500; font-size: 0.78rem; }
+.staff-btn-sm { padding: 0.4rem 0.85rem; font-size: 0.82rem; text-decoration: none; display: inline-block; }
