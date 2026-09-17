@@ -1,18 +1,4 @@
 export const DASHBOARD_CONFIGS = {
-  Owner: {
-    title: "Owner Dashboard",
-    subtitle: "Manage branches, staff, billing, and salon-wide performance.",
-    modules: [
-      { title: "Users Management", desc: "Create staff accounts and assign roles.", path: "/admin/users", icon: "users" },
-      { title: "Branch Management", desc: "Add and edit salon branches.", path: "/branches", icon: "branch" },
-      { title: "Salary Management", desc: "Payroll, salaries, and staff payments.", path: "/staff", icon: "salary" },
-      { title: "Branch Inventory", desc: "Stock levels across all branches.", path: "/admin/branch-inventory", icon: "inventory" },
-      { title: "Billing & Payments", desc: "Income, bills, and payment history.", path: "/billing", icon: "billing" },
-      { title: "Reports & Analytics", desc: "Top services, products, and trends.", path: "/reports", icon: "reports" },
-      { title: "Appointment History", desc: "Past bookings across the salon.", path: "/appointment-history", icon: "calendar" },
-      { title: "Service History", desc: "Completed services and records.", path: "/service-history", icon: "service" },
-    ],
-  },
   "Branch Manager": {
     title: "Branch Manager Dashboard",
     subtitle: "Run daily operations for your branch — staff, services, and stock.",
