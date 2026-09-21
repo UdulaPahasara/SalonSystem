@@ -6,12 +6,20 @@ import { getDashboardConfig } from "../utils/dashboardConfigs";
 import { getStaffHomePath } from "../utils/staffNav";
 import StaffDashboardHome from "../components/staff/StaffDashboardHome";
 import OwnerDashboard from "../components/staff/OwnerDashboard";
+import ManagerDashboard from "../components/staff/ManagerDashboard";
+import ReceptionDashboard from "../components/staff/ReceptionDashboard";
+import CashierDashboard from "../components/staff/CashierDashboard";
+import ProductManagerDashboard from "../components/staff/ProductManagerDashboard";
 
 export default function StaffDashboardPage() {
   const { userRole, fullName } = useAuth();
   const config = getDashboardConfig(userRole);
 
   if (userRole === "Owner") return <OwnerDashboard userName={fullName} />;
+  if (userRole === "Branch Manager") return <ManagerDashboard />;
+  if (userRole === "Reception") return <ReceptionDashboard />;
+  if (userRole === "Cashier" || userRole === "Chashire") return <CashierDashboard />;
+  if (userRole === "Product Manager") return <ProductManagerDashboard />;
 
   if (!config) {
     return (
