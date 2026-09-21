@@ -44,7 +44,7 @@
 .dash-table th { padding: 0.5rem 0.6rem; border-bottom: 1px solid #e2d7cf; color: #806774; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-align: left; text-transform: uppercase; }
 .dash-table td { padding: 0.7rem 0.6rem; border-bottom: 1px solid #f0e8e2; }
 .dash-table tr:last-child td { border-bottom: 0; }
-.dash-table .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.dash-table .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 
 .dash-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.5rem; }
 .dash-list a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0.9rem; border: 1px solid #e8ddd5; border-radius: 8px; color: #3a0a22; text-decoration: none; transition: border-color 0.15s, background 0.15s; }
@@ -64,6 +64,7 @@
   .dash-kpi:nth-child(n + 3) { border-top: 1px solid #e2d7cf; }
 }
 @media (max-width: 520px) {
+  .dash-table th:nth-child(2), .dash-table td:nth-child(2) { display: none; }
   .dash-kpis { grid-template-columns: 1fr; }
   .dash-kpi { border-left: 0; border-top: 1px solid #e2d7cf; }
   .dash-kpi:first-child { border-top: 0; }
