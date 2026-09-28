@@ -17,7 +17,7 @@ const FILTERS = ["All", "Low stock", "Out of stock"];
 const stockState = (qty) => (qty <= 0 ? "out" : qty < LOW_STOCK_LIMIT ? "low" : "ok");
 const STATE_LABEL = { ok: "In stock", low: "Low stock", out: "Out of stock" };
 
-export default function AdminBranchInventory() {
+export default function AdminBranchInventory({ fixedBranchId, title = "Branch Inventory", subtitle = "Stock levels for each branch." }) {
   const { userRole } = useAuth();
   const toast = useToast();
   const [branches, setBranches] = useState([]);
@@ -28,6 +28,10 @@ export default function AdminBranchInventory() {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
+    if (fixedBranchId) {
+      setBranchId(String(fixedBranchId));
+      return;
+    }
     getBranches()
       .then((list) => {
         setBranches(list);
@@ -79,7 +83,7 @@ export default function AdminBranchInventory() {
 
   return (
     <div className="staff-page">
-      <PageHeader title="Branch Inventory" subtitle="Stock levels for each branch." backTo={getStaffHomePath(userRole)} />
+      <PageHeader title={title} subtitle={subtitle} backTo={getStaffHomePath(userRole)} />
 
       <section className="dash-kpis staff-kpis" aria-label="Inventory summary">
         {kpis.map((k) => (
@@ -102,14 +106,16 @@ export default function AdminBranchInventory() {
           </div>
           <input className="staff-input staff-search" type="search" placeholder="Search products" aria-label="Search products" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <label className="staff-field-inline" htmlFor="inv-branch">
-          Branch
-          <select id="inv-branch" className="staff-input" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>{b.branchName}</option>
-            ))}
-          </select>
-        </label>
+        {!fixedBranchId && (
+          <label className="staff-field-inline" htmlFor="inv-branch">
+            Branch
+            <select id="inv-branch" className="staff-input" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>{b.branchName}</option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       {loading ? (
