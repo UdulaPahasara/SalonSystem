@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import featureImage from "../../images/salon-feature.jpg";
+import featureImage from "../../images/redesign/service-hair.png";
 import { SALON_INFO } from "../../utils/salonInfo";
 
 export default function AboutPage() {

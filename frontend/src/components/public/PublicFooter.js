@@ -11,10 +11,17 @@ const POLICY_LINKS = [
 export default function PublicFooter() {
   return (
     <footer className="public-footer">
+      <div className="public-footer-cta">
+        <div>
+          <p className="public-eyebrow">Ready when you are</p>
+          <h3>Plan your next visit to Malroo.</h3>
+        </div>
+        <Link to="/contact" className="public-btn public-btn-primary">Contact the salon</Link>
+      </div>
       <div className="public-footer-grid">
         <div>
           <h4>{SALON_INFO.name}</h4>
-          <p>Elegant women's salon services — hair, skin, nails, and bridal care.</p>
+          <p>Expert hair, skin, nail and bridal care — thoughtfully tailored and clearly priced.</p>
           <p>
             {SALON_INFO.address.line1}, {SALON_INFO.address.city}
             <br />
