@@ -111,6 +111,8 @@ function AppointmentManagement() {
   useEffect(() => {
     if (searchParams.get("new")) {
       openDialog();
+      const customer = searchParams.get("customer"); // "Book" button on the Customers page
+      if (customer) setForm((f) => ({ ...f, customerId: customer }));
       setSearchParams({}, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
