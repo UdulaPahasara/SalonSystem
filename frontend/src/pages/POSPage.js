@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { getAllAppointments } from "../api/appointmentApi";
 import PageHeader from "../components/staff/PageHeader";
 import { getStaffHomePath } from "../utils/staffNav";
 import { useAuth } from "../context/AuthContext";
@@ -26,6 +28,8 @@ export default function POSPage() {
   const [cashReceived, setCashReceived] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [appointment, setAppointment] = useState(null); // the booked visit being paid for
 
   const loadStock = () =>
     getInventoryByBranch(branchId).then(setStock).catch(() => toast.error("Failed to load products."));
@@ -37,6 +41,28 @@ export default function POSPage() {
     loadStock();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branchId]);
+
+  // "Check out" on the dashboard opens /cashier/pos?appointment=ID: prefill the customer and the booked service.
+  const appointmentId = searchParams.get("appointment");
+  useEffect(() => {
+    if (!appointmentId || !branchId || services.length === 0 || appointment) return;
+    getAllAppointments(branchId)
+      .then((list) => {
+        const a = list.find((x) => String(x.appointmentId) === appointmentId && (x.status || "BOOKED") === "BOOKED");
+        if (!a) {
+          toast.error("That appointment is no longer waiting for checkout.");
+          setSearchParams({}, { replace: true });
+          return;
+        }
+        setAppointment(a);
+        if (a.customer) setCustomerId(String(a.customer.customerId));
+        const s = services.find((x) => x.name === a.serviceType);
+        if (s) setCart([{ key: `s${s.serviceId}`, serviceId: s.serviceId, name: s.name, unitPrice: s.price, quantity: 1 }]);
+        else toast.error(`"${a.serviceType}" isn't on this branch's menu. Add the service manually.`);
+      })
+      .catch(() => toast.error("Couldn't load the appointment."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointmentId, branchId, services]);
 
   const addLine = (line) => {
     setCart((prev) => {
@@ -77,12 +103,15 @@ export default function POSPage() {
         branchId,
         cashierId: userId,
         customerId: customerId ? Number(customerId) : null,
+        appointmentId: appointment ? appointment.appointmentId : null,
         paymentMethod,
         items: cart.map((l) => ({ serviceId: l.serviceId, productId: l.productId, quantity: l.quantity })),
       });
       setReceipt({ ...tx, cashReceived: paymentMethod === "CASH" && cashReceived !== "" ? Number(cashReceived) : null });
       setCart([]);
       setCustomerId("");
+      setAppointment(null);
+      setSearchParams({}, { replace: true });
       setCashReceived("");
       toast.success(`Payment recorded — ${money(tx.totalAmount)}`);
       loadStock();
@@ -100,6 +129,16 @@ export default function POSPage() {
         subtitle="Add services and products, take payment, print receipt."
         backTo={getStaffHomePath(userRole)}
       />
+
+      {appointment && (
+        <div className="pos-banner" role="status">
+          <span>
+            Checking out <strong>{appointment.customer ? appointment.customer.fullName : "a walk-in"}</strong> for <strong>{appointment.serviceType}</strong>
+            {" "}({new Date(appointment.appointmentTime).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}). Paying completes the visit.
+          </span>
+          <button type="button" className="link-btn" onClick={() => { setAppointment(null); setCart([]); setCustomerId(""); setSearchParams({}, { replace: true }); }}>Clear</button>
+        </div>
+      )}
 
       <div className="pos-grid">
         <section className="staff-form-panel">
