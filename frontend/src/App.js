@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import { ConfirmProvider } from "./context/ConfirmContext";
 import ScrollToTop from "./components/ScrollToTop";
+import RoleGate from "./components/staff/RoleGate";
 import PublicLayout from "./components/public/PublicLayout";
 import StaffLayout from "./components/staff/StaffLayout";
 import AdminBranchInventory from "./pages/AdminBranchInventory";
@@ -63,40 +64,54 @@ function App() {
               <Route path="/login" element={<Login />} />
 
               <Route element={<StaffLayout />}>
-                <Route path="/admin-dashboard" element={<StaffDashboardPage />} />
-                <Route path="/branch-dashboard" element={<StaffDashboardPage />} />
-                <Route path="/reception-dashboard" element={<StaffDashboardPage />} />
-                <Route path="/pm-dashboard" element={<StaffDashboardPage />} />
-                <Route path="/cashier" element={<StaffDashboardPage />} />
+                <Route element={<RoleGate roles={["Owner"]} />}>
+                  <Route path="/admin-dashboard" element={<StaffDashboardPage />} />
+                  <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route path="/admin/branch-inventory" element={<AdminBranchInventory />} />
+                  <Route path="/billing" element={<AdminBillingHistory />} />
+                  <Route path="/branches" element={<BranchPage />} />
+                  <Route path="/staff" element={<SalaryManagement />} />
+                </Route>
 
-                <Route path="/admin/users" element={<AdminUsersPage />} />
-                <Route path="/admin/branch-inventory" element={<AdminBranchInventory />} />
-                <Route path="/billing" element={<AdminBillingHistory />} />
-                <Route path="/branches" element={<BranchPage />} />
-                <Route path="/staff" element={<SalaryManagement />} />
+                <Route element={<RoleGate roles={["Branch Manager"]} />}>
+                  <Route path="/branch-dashboard" element={<StaffDashboardPage />} />
+                  <Route path="/branch/services" element={<BranchServiceManagement />} />
+                  <Route path="/branch/products" element={<BranchProductInventory />} />
+                  <Route path="/branch/billing" element={<BranchBillingHistory />} />
+                  <Route path="/branch/stock-requests" element={<BranchManagerStockApproval />} />
+                  <Route path="/branch/staff" element={<BranchStaffManagement />} />
+                  <Route path="/branch/appointments" element={<BranchAppointmentManagement />} />
+                </Route>
 
-                <Route path="/branch/services" element={<BranchServiceManagement />} />
-                <Route path="/branch/products" element={<BranchProductInventory />} />
-                <Route path="/branch/billing" element={<BranchBillingHistory />} />
-                <Route path="/branch/stock-requests" element={<BranchManagerStockApproval />} />
-                <Route path="/branch/staff" element={<BranchStaffManagement />} />
-                <Route path="/branch/appointments" element={<BranchAppointmentManagement />} />
+                <Route element={<RoleGate roles={["Product Manager"]} />}>
+                  <Route path="/pm-dashboard" element={<StaffDashboardPage />} />
+                  <Route path="/pm/products" element={<ProductManagementPage />} />
+                  <Route path="/pm/inventory" element={<ProductManagerInventoryPage />} />
+                </Route>
 
-                <Route path="/pm/products" element={<ProductManagementPage />} />
-                <Route path="/pm/inventory" element={<ProductManagerInventoryPage />} />
+                <Route element={<RoleGate roles={["Cashier"]} />}>
+                  <Route path="/cashier" element={<StaffDashboardPage />} />
+                  <Route path="/cashier/pos" element={<POSPage />} />
+                  <Route path="/cashier/appointments" element={<CashierAppointments />} />
+                  <Route path="/cashier/history" element={<TransactionHistory />} />
+                </Route>
 
-                <Route path="/cashier/pos" element={<POSPage />} />
-                <Route path="/cashier/appointments" element={<CashierAppointments />} />
-                <Route path="/cashier/history" element={<TransactionHistory />} />
+                <Route element={<RoleGate roles={["Reception"]} />}>
+                  <Route path="/reception-dashboard" element={<StaffDashboardPage />} />
+                  <Route path="/reception/customers" element={<CustomerManagement />} />
+                  <Route path="/reception/contact-messages" element={<ContactMessagesPage />} />
+                  <Route path="/reception/appointments" element={<AppointmentManagement />} />
+                </Route>
 
-                <Route path="/reception/customers" element={<CustomerManagement />} />
-                <Route path="/reception/contact-messages" element={<ContactMessagesPage />} />
-                <Route path="/reception/appointments" element={<AppointmentManagement />} />
+                <Route element={<RoleGate roles={["Owner", "Branch Manager"]} />}>
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route path="/appointment-history" element={<AppointmentHistory />} />
+                  <Route path="/service-history" element={<ServiceHistory />} />
+                </Route>
 
-                <Route path="/reports" element={<ReportsPage />} />
-                <Route path="/appointment-history" element={<AppointmentHistory />} />
-                <Route path="/service-history" element={<ServiceHistory />} />
-                <Route path="/stock-request-history" element={<StockRequestHistory />} />
+                <Route element={<RoleGate roles={["Owner", "Branch Manager", "Product Manager"]} />}>
+                  <Route path="/stock-request-history" element={<StockRequestHistory />} />
+                </Route>
               </Route>
             </Routes>
           </div>
