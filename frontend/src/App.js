@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import { ConfirmProvider } from "./context/ConfirmContext";
+import ScrollToTop from "./components/ScrollToTop";
 import PublicLayout from "./components/public/PublicLayout";
 import StaffLayout from "./components/staff/StaffLayout";
 import AdminBranchInventory from "./pages/AdminBranchInventory";
@@ -46,6 +47,7 @@ function App() {
       <ToastProvider>
         <ConfirmProvider>
           <div className="App">
+            <ScrollToTop />
             <Routes>
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<Home />} />
