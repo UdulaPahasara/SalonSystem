@@ -222,6 +222,10 @@ export default function AdminUsersPage() {
         </select>
       </div>
 
+      <p className="staff-table-meta">
+        Showing {visibleUsers.length} {visibleUsers.length === 1 ? "user" : "users"}
+      </p>
+
       <table className="staff-table">
         <thead>
           <tr>
@@ -229,16 +233,16 @@ export default function AdminUsersPage() {
             <th>Username</th>
             <th>Role</th>
             <th>Branch</th>
-            <th>Actions</th>
+            <th className="staff-th-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {visibleUsers.map((u) => (
             <tr key={u.id}>
-              <td>{u.fullName || u.username}</td>
-              <td>{u.username}</td>
+              <td className="staff-cell-strong">{u.fullName || u.username}</td>
+              <td className="staff-cell-muted">{u.username}</td>
               <td><span className="role-badge">{getRoleDisplayName(u.roleName)}</span></td>
-              <td>{u.branchName || "Head Office"}</td>
+              <td className={u.branchName ? undefined : "staff-cell-muted"}>{u.branchName || "Head Office"}</td>
               <td className="staff-row-actions">
                 <button className="dashboard-btn-edit" onClick={() => openModal(u)}>Edit</button>
                 {u.id !== userId && (
