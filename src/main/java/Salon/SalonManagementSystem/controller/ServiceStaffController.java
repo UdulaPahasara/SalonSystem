@@ -34,7 +34,10 @@ public class ServiceStaffController {
         try {
             ServiceStaff s = new ServiceStaff();
             apply(s, body, true);
+            Salon.SalonManagementSystem.security.AuthContext.requireBranch(s.getBranch().getId());
             return ResponseEntity.ok(staffRepo.save(s));
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -44,8 +47,12 @@ public class ServiceStaffController {
     public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody Map<String, Object> body) {
         try {
             ServiceStaff s = staffRepo.findById(id).orElseThrow(() -> new RuntimeException("Staff member not found"));
+            Salon.SalonManagementSystem.security.AuthContext.requireBranch(s.getBranch() == null ? null : s.getBranch().getId());
             apply(s, body, false);
+            Salon.SalonManagementSystem.security.AuthContext.requireBranch(s.getBranch().getId());
             return ResponseEntity.ok(staffRepo.save(s));
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -54,11 +61,16 @@ public class ServiceStaffController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Integer id) {
         try {
-            staffRepo.deleteById(id);
+            ServiceStaff s = staffRepo.findById(id).orElseThrow(() -> new RuntimeException("Staff member not found"));
+            Salon.SalonManagementSystem.security.AuthContext.requireBranch(s.getBranch() == null ? null : s.getBranch().getId());
+            staffRepo.delete(s);
+            staffRepo.flush();
             return ResponseEntity.ok().build();
         } catch (DataIntegrityViolationException e) {
             return ResponseEntity.badRequest()
                     .body("This person has appointments or salary payments on record and can't be removed.");
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body("Staff member not found");
         }

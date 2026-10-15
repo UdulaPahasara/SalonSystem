@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/reports")
-@CrossOrigin(origins = "http://localhost:3000") // Allow frontend access
+@RequestMapping("/api/reports") // Allow frontend access
 public class ReportController {
 
     @Autowired

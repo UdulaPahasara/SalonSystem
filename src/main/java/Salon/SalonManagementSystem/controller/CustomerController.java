@@ -11,7 +11,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/customers")
-@CrossOrigin(origins = "http://localhost:3000")
 public class CustomerController {
 
     @Autowired
@@ -20,15 +19,15 @@ public class CustomerController {
     @PostMapping
     public ResponseEntity<?> createCustomer(@RequestBody Map<String, Object> payload) {
         try {
-            String phone = (String) payload.get("phone");
-            if (phone == null || !phone.matches("\\d{10}")) {
-                throw new RuntimeException("Invalid phone number. Must be 10 digits.");
-            }
+            String phone = CustomerService.cleanPhone((String) payload.get("phone"));
+            String name = ((String) payload.get("fullName") == null ? "" : ((String) payload.get("fullName")).trim());
+            String email = payload.get("email") == null ? null : ((String) payload.get("email")).trim();
+            CustomerService.validate(name, phone, email);
 
             Customer c = new Customer();
-            c.setFullName((String) payload.get("fullName"));
+            c.setFullName(name);
             c.setPhone(phone);
-            c.setEmail((String) payload.get("email"));
+            c.setEmail(email == null || email.isEmpty() ? null : email);
             if (payload.get("loyaltyMember") != null) {
                 c.setLoyaltyMember((Boolean) payload.get("loyaltyMember"));
             }
@@ -38,7 +37,11 @@ public class CustomerController {
                 branchId = ((Number) payload.get("branchId")).intValue();
             }
 
+            if (branchId == null) throw new RuntimeException("Branch is required.");
+            Salon.SalonManagementSystem.security.AuthContext.requireBranch(branchId);
             return ResponseEntity.ok(customerService.createCustomer(c, branchId));
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -62,6 +65,8 @@ public class CustomerController {
     public ResponseEntity<?> updateCustomer(@PathVariable Integer id, @RequestBody Customer customer) {
         try {
             return ResponseEntity.ok(customerService.updateCustomer(id, customer));
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -75,6 +80,8 @@ public class CustomerController {
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             return ResponseEntity.status(409)
                     .body("This customer has appointments or purchases on record and can't be deleted.");
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

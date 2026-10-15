@@ -8,4 +8,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     List<Appointment> findByCustomer_CustomerId(Integer customerId);
 
     List<Appointment> findByBranch_Id(Integer branchId);
+
+    List<Appointment> findByAssignedStaff_IdAndStatus(Integer staffId, String status);
 }

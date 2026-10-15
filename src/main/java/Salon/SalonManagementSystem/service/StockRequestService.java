@@ -34,10 +34,16 @@ public class StockRequestService {
 
     public StockRequest create(StockRequestCreateDTO dto) {
         StockRequest request = new StockRequest();
+        Integer qty = dto.getRequestedQuantity();
+        if (qty == null || qty < 1 || qty > 100000) throw new IllegalArgumentException("Quantity must be between 1 and 100,000.");
+        if (dto.getProductId() == null || dto.getBranchId() == null) throw new IllegalArgumentException("Choose a product and a branch.");
 
-        request.setProduct(productRepo.findById(dto.getProductId()).orElseThrow());
-        request.setBranch(branchRepo.findById(dto.getBranchId()).orElseThrow());
-        request.setRequestedBy(usersRepo.findById(dto.getRequestedBy()).orElseThrow());
+        request.setProduct(productRepo.findById(dto.getProductId()).orElseThrow(() -> new IllegalArgumentException("Product not found.")));
+        request.setBranch(branchRepo.findById(dto.getBranchId()).orElseThrow(() -> new IllegalArgumentException("Branch not found.")));
+        // the requester is whoever is signed in, not whatever the client says
+        Salon.SalonManagementSystem.security.AuthUser me = Salon.SalonManagementSystem.security.AuthContext.current();
+        Integer by = me != null ? Integer.valueOf(me.id()) : dto.getRequestedBy();
+        request.setRequestedBy(usersRepo.findById(by).orElseThrow(() -> new IllegalArgumentException("Requesting user not found.")));
 
         request.setRequestedQuantity(dto.getRequestedQuantity());
         request.setStatus("PENDING");
@@ -52,10 +58,9 @@ public class StockRequestService {
     public StockRequest approve(Integer id) {
         StockRequest request = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Stock request not found"));
+        Salon.SalonManagementSystem.security.AuthContext.requireBranch(request.getBranch().getId());
         requirePending(request);
 
-        System.out.println("Approving Stock Request ID: " + id + " for Product: "
-                + request.getProduct().getProductName() + " Branch: " + request.getBranch().getBranchName());
 
         // Update Inventory
         Salon.SalonManagementSystem.model.BranchInventory inventory = inventoryRepo
@@ -63,7 +68,6 @@ public class StockRequestService {
                 .orElse(null);
 
         if (inventory == null) {
-            System.out.println("Inventory not found. Creating new record.");
             // Create new inventory record if it doesn't exist
             inventory = new Salon.SalonManagementSystem.model.BranchInventory();
             inventory.setBranch(request.getBranch());
@@ -73,13 +77,10 @@ public class StockRequestService {
             inventory.setLowStockLimit(
                     request.getProduct().getLowStockLimit() != null ? request.getProduct().getLowStockLimit() : 10);
         } else {
-            System.out.println("Inventory found. Current Qty: " + inventory.getQuantity() + ". Adding: "
-                    + request.getRequestedQuantity());
             // Update existing
             inventory.setQuantity(inventory.getQuantity() + request.getRequestedQuantity());
         }
         Salon.SalonManagementSystem.model.BranchInventory saved = inventoryRepo.save(inventory);
-        System.out.println("Inventory saved. New Qty: " + saved.getQuantity());
 
         request.setStatus("APPROVED");
         return repo.save(request);
@@ -88,6 +89,7 @@ public class StockRequestService {
     public StockRequest reject(Integer id) {
         StockRequest request = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Stock request not found"));
+        Salon.SalonManagementSystem.security.AuthContext.requireBranch(request.getBranch().getId());
         requirePending(request);
 
         request.setStatus("REJECTED");
