@@ -5,6 +5,7 @@ import { getAllAppointments } from "../../api/appointmentApi";
 import { getStockRequestsByBranch } from "../../api/stockRequestApi";
 import { getInventoryByBranch } from "../../api/productApi";
 import BarChart from "./BarChart";
+import { recentRange } from "../../utils/period";
 import { DashboardHead, Kpis, Card, AttentionList, ActionList, RecentSales, Schedule, DashGrid, Empty, useLoad, valueOf, lastSevenDays, trendText, sameDay, sumOf, rsWhole, LOW_STOCK_LIMIT } from "./DashboardParts";
 
 export default function ManagerDashboard() {
@@ -12,7 +13,7 @@ export default function ManagerDashboard() {
 
   const { loading, data } = useLoad(async () => {
     const [tx, appts, stock, inv] = await Promise.allSettled([
-      getTransactionsByBranch(branchId),
+      getTransactionsByBranch(branchId, recentRange()),
       getAllAppointments(branchId),
       getStockRequestsByBranch(branchId),
       getInventoryByBranch(branchId),

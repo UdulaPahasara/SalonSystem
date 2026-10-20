@@ -4,13 +4,14 @@ import { useAuth } from "../../context/AuthContext";
 import { getTransactionsByBranch } from "../../api/usersApi";
 import { getAllAppointments } from "../../api/appointmentApi";
 import { getInventoryByBranch } from "../../api/productApi";
+import { recentRange } from "../../utils/period";
 import { DashboardHead, Kpis, Card, AttentionList, ActionList, RecentSales, Schedule, DashGrid, useLoad, valueOf, sameDay, sumOf, rsWhole, LOW_STOCK_LIMIT } from "./DashboardParts";
 
 export default function CashierDashboard() {
   const { fullName, branchId, userId } = useAuth();
 
   const { loading, data } = useLoad(async () => {
-    const [tx, appts, inv] = await Promise.allSettled([getTransactionsByBranch(branchId), getAllAppointments(branchId), getInventoryByBranch(branchId)]);
+    const [tx, appts, inv] = await Promise.allSettled([getTransactionsByBranch(branchId, recentRange()), getAllAppointments(branchId), getInventoryByBranch(branchId)]);
     return { tx: valueOf(tx, []), appts: valueOf(appts, []), inv: valueOf(inv, []) };
   }, [branchId]);
 

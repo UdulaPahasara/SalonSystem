@@ -54,7 +54,9 @@ export async function loadReport({ start, end, branchId, granularity = "auto" })
     getRevenueReport({ ...base, startDate: isoLocal(prevStart), endDate: isoLocal(prevEnd), period: "monthly" }),
     getTopServices(range),
     getTopProducts(range),
-    branchId ? getTransactionsByBranch(branchId) : getAllTransactions(),
+    branchId
+      ? getTransactionsByBranch(branchId, { startDate: range.startDate, endDate: range.endDate })
+      : getAllTransactions({ startDate: range.startDate, endDate: range.endDate }),
   ]);
   return {
     monthly, days, revenue, prev, services, products,
