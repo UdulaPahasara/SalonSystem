@@ -179,6 +179,7 @@ export default function AdminUsersPage() {
   };
 
   /* ---------------- RENDER ---------------- */
+  const isOwnerRole = roles.find((r) => String(r.id) === String(form.roleId))?.roleName === "Owner";
   const visibleUsers = users.filter(
     (u) => selectedRole === "All" || getRoleDisplayName(u.roleName) === selectedRole
   );
@@ -273,7 +274,7 @@ export default function AdminUsersPage() {
               </div>
               <div className="form-group">
                 <label htmlFor="user-password">Password {editingUser && "(leave blank to keep current)"}</label>
-                <input id="user-password" className="staff-input" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editingUser} />
+                <input id="user-password" className="staff-input" type="password" minLength={8} autoComplete="new-password" placeholder="At least 8 characters" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editingUser} />
               </div>
               <div className="form-group">
                 <label htmlFor="user-fullname">Full Name</label>
@@ -288,8 +289,8 @@ export default function AdminUsersPage() {
               </div>
               <div className="form-group">
                 <label htmlFor="user-branch">Branch</label>
-                <select id="user-branch" className="staff-input" value={form.branchId} onChange={(e) => setForm({ ...form, branchId: e.target.value })}>
-                  <option value="">No branch (Head Office)</option>
+                <select id="user-branch" className="staff-input" value={form.branchId} onChange={(e) => setForm({ ...form, branchId: e.target.value })} required={!isOwnerRole}>
+                  <option value="">{isOwnerRole ? "No branch (Head Office)" : "Select branch"}</option>
                   {branches.map((b) => <option key={b.id} value={b.id}>{b.branchName}</option>)}
                 </select>
               </div>

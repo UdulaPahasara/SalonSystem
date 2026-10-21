@@ -100,7 +100,7 @@ export default function CustomerManagement() {
   const kpis = [
     { label: "Customers", value: customers.length, hint: "Registered at your branch" },
     { label: "Loyalty members", value: members, hint: customers.length ? `${Math.round((members / customers.length) * 100)}% of customers` : "—" },
-    { label: "Loyalty points", value: customers.reduce((s, c) => s + Number(c.loyaltyPoints || 0), 0).toLocaleString(), hint: "Held by members" },
+    { label: "Loyalty points", value: customers.reduce((s, c) => s + Number(c.loyaltyPoints || 0), 0).toLocaleString(), hint: "Members earn 1 point per Rs. 100" },
   ];
 
   return (
