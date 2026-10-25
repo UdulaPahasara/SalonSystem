@@ -21,4 +21,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Intege
     List<Transaction> findByDateRange(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    /** One row per customer who has ever paid up to `end`: [customerId, first payment, last payment, number of payments]. */
+    @Query("SELECT t.customer.customerId, MIN(t.dateTime), MAX(t.dateTime), COUNT(t) FROM Transaction t "
+            + "WHERE t.customer IS NOT NULL AND t.dateTime <= :end GROUP BY t.customer.customerId")
+    List<Object[]> customerVisitSpan(@Param("end") LocalDateTime end);
 }
