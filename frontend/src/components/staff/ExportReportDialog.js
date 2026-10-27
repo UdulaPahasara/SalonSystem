@@ -1,16 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useToast } from "../../context/ToastContext";
-import { rs } from "../../utils/format";
 import { PRESETS, rangeFor, fmtDate, dateKey, loadReport, buildReportView } from "../../utils/reportData";
-
-const SECTIONS = [
-  { id: "summary", label: "Summary figures" },
-  { id: "revenue", label: "Revenue over time" },
-  { id: "services", label: "Top services" },
-  { id: "products", label: "Top products" },
-  { id: "payments", label: "Payment methods" },
-  { id: "branches", label: "Branch comparison" },
-];
+import { REPORT_SECTIONS, buildSections } from "../../utils/reportTables";
 
 export default function ExportReportDialog({ onClose, isOwner, branches, ownBranchId, initial }) {
   const toast = useToast();
@@ -20,7 +11,8 @@ export default function ExportReportDialog({ onClose, isOwner, branches, ownBran
   const [to, setTo] = useState(initial.to);
   const [granularity, setGranularity] = useState("auto");
   const [branchId, setBranchId] = useState(initial.branchId || "");
-  const [sections, setSections] = useState(Object.fromEntries(SECTIONS.map((s) => [s.id, true])));
+  const SECTIONS = REPORT_SECTIONS.filter((s) => isOwner || !s.ownerOnly);
+  const [sections, setSections] = useState(Object.fromEntries(REPORT_SECTIONS.map((s) => [s.id, true])));
   const [busy, setBusy] = useState(false);
   const today = dateKey(new Date());
 
@@ -35,8 +27,7 @@ export default function ExportReportDialog({ onClose, isOwner, branches, ownBran
   const days = start ? Math.round((end - start) / 864e5) + 1 : 0;
   const monthly = granularity === "monthly" || (granularity === "auto" && days > 92) || days > 366;
   const target = isOwner ? branchId : String(ownBranchId || "");
-  const compareAvailable = isOwner && !branchId;
-  const anySection = SECTIONS.some((s) => sections[s.id] && (s.id !== "branches" || compareAvailable));
+  const anySection = SECTIONS.some((s) => sections[s.id]);
 
   const download = async (e) => {
     e.preventDefault();
@@ -45,22 +36,12 @@ export default function ExportReportDialog({ onClose, isOwner, branches, ownBran
     try {
       const raw = await loadReport({ start, end, branchId: target, granularity });
       const view = buildReportView(raw, start, end);
-      const kpis = [
-        { label: "Total revenue", value: rs(view.total) },
-        { label: "Transactions", value: view.count.toLocaleString() },
-        { label: "Average sale", value: rs(Math.round(view.avg)) },
-        { label: raw.monthly ? "Best month" : "Best day", value: view.best && view.best.revenue > 0 ? `${rs(view.best.revenue)} (${view.best.tip})` : "-" },
-      ];
+      const periodLabel = `${fmtDate(start)} - ${fmtDate(end)}`;
       const report = {
-        periodLabel: `${fmtDate(start)} - ${fmtDate(end)}`,
+        periodLabel,
         branchName: isOwner ? (branchId ? branches.find((b) => String(b.id) === String(branchId))?.branchName || "Branch" : "All branches") : "Your branch",
         generatedAt: new Date().toLocaleString(),
-        kpis,
-        revenueTitle: raw.monthly ? "Month" : "Date",
-        revenueRows: view.rows.map((r) => ({ label: r.text, count: r.count, revenue: r.revenue })),
-        services: view.services, products: view.products, payments: view.payments,
-        branches: compareAvailable ? view.branchRows.map((b) => ({ name: b.name, count: b.count, revenue: b.revenue, share: b.share })) : [],
-        sections: { ...sections, branches: sections.branches && compareAvailable },
+        sections: buildSections(view, { isOwner, periodLabel }).filter((sec) => sections[sec.id]),
       };
       const { exportReportExcel, exportReportPdf } = await import("../../utils/reportExport");
       await (format === "excel" ? exportReportExcel(report) : exportReportPdf(report));
@@ -82,7 +63,7 @@ export default function ExportReportDialog({ onClose, isOwner, branches, ownBran
           <fieldset className="export-group">
             <legend>Format</legend>
             <div className="export-formats">
-              {[["excel", "Excel (.xlsx)", "Spreadsheet with a sheet per section"], ["pdf", "PDF", "Printable report for sharing"]].map(([id, title, sub]) => (
+              {[["excel", "Excel (.xlsx)", "A sheet for each section"], ["pdf", "PDF", "Printable report for sharing"]].map(([id, title, sub]) => (
                 <label key={id} className={`export-format${format === id ? " selected" : ""}`}>
                   <input type="radio" name="format" value={id} checked={format === id} onChange={() => setFormat(id)} />
                   <span><strong>{title}</strong><small>{sub}</small></span>
@@ -144,15 +125,12 @@ export default function ExportReportDialog({ onClose, isOwner, branches, ownBran
           <fieldset className="export-group">
             <legend>Include</legend>
             <div className="export-sections">
-              {SECTIONS.map((s) => {
-                const disabled = s.id === "branches" && !compareAvailable;
-                return (
-                  <label key={s.id} className={`form-check${disabled ? " disabled" : ""}`}>
-                    <input type="checkbox" checked={sections[s.id] && !disabled} disabled={disabled} onChange={(e) => setSections({ ...sections, [s.id]: e.target.checked })} />
-                    {s.label}
-                  </label>
-                );
-              })}
+              {SECTIONS.map((s) => (
+                <label key={s.id} className="form-check">
+                  <input type="checkbox" checked={sections[s.id]} onChange={(e) => setSections({ ...sections, [s.id]: e.target.checked })} />
+                  {s.label}
+                </label>
+              ))}
             </div>
           </fieldset>
 

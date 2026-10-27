@@ -109,3 +109,22 @@
   .link-btn, .dashboard-btn-edit, .dashboard-btn-delete, .dashboard-btn-primary { min-height: 38px; padding-top: 0.45rem; padding-bottom: 0.45rem; }
   .staff-chip { min-height: 40px; }
 }
+
+/* Reports: grouped sections, findings and tables */
+.report-tabs { margin: 0 0 0.9rem; }
+.report-intro { margin: 0 0 1rem; color: #735c66; font-size: 0.92rem; }
+.report-table-card { margin-top: 1.25rem; }
+.report-table-card:first-of-type { margin-top: 0; }
+.report-table-note { margin: -0.4rem 0 1rem; color: #806774; font-size: 0.85rem; max-width: 70ch; }
+.report-table-card .dash-chart { margin-bottom: 1.1rem; }
+.report-total-row td { font-weight: 700; border-top: 2px solid #e2d7cf; }
+.report-insights { margin-bottom: 1.25rem; }
+.insight-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
+.insight { display: grid; gap: 0.15rem; padding: 0.7rem 0.9rem; border-left: 4px solid #c9b8bf; border-radius: 4px; background: #faf6f3; font-size: 0.93rem; color: #3a0a22; }
+.insight-tag { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #735c66; }
+.insight-warn { border-left-color: #b45309; background: #fef8ec; }
+.insight-warn .insight-tag { color: #92400e; }
+.insight-good { border-left-color: #15803d; background: #f1faf3; }
+.insight-good .insight-tag { color: #166534; }
+.report-table td:first-child { min-width: 11rem; }
+.report-table th, .report-table td { white-space: nowrap; }
