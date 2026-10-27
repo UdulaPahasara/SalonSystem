@@ -5,32 +5,12 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/staff/PageHeader";
 import { getStaffHomePath } from "../utils/staffNav";
-import { rs } from "../utils/format";
+import { rs, PERIODS, inPeriod, downloadCsv } from "../utils/format";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
 import "../styles/StaffPages.css";
 
 const METHODS = ["All", "Cash", "Card"];
-const PERIODS = [
-  { id: "all", label: "All time" },
-  { id: "today", label: "Today" },
-  { id: "7", label: "Last 7 days" },
-  { id: "30", label: "Last 30 days" },
-  { id: "month", label: "This month" },
-];
-
-function inPeriod(dateTime, period) {
-  if (period === "all") return true;
-  const d = new Date(dateTime);
-  const now = new Date();
-  if (period === "today") return d.toDateString() === now.toDateString();
-  if (period === "month") return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (Number(period) - 1));
-  return d >= start;
-}
-
 const itemName = (i) => (i.service ? i.service.name : i.product ? i.product.productName : "Item");
 
 export default function AdminBillingHistory() {
@@ -74,20 +54,12 @@ export default function AdminBillingHistory() {
     { label: "Card payments", value: rows.length ? `${Math.round((cardCount / rows.length) * 100)}%` : "—", hint: `${cardCount} of ${rows.length}` },
   ];
 
-  const exportCsv = () => {
-    const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const lines = [["Receipt", "Date", "Branch", "Cashier", "Customer", "Payment", "Amount"].join(",")].concat(
-      rows.map((t) =>
-        [t.transactionId, new Date(t.dateTime).toLocaleString(), t.branch?.branchName, t.cashier?.fullName, t.customer?.fullName || "Walk-in", t.paymentMethod, t.totalAmount].map(esc).join(",")
-      )
+  const exportCsv = () =>
+    downloadCsv(
+      `billing-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["Receipt", "Date", "Branch", "Cashier", "Customer", "Payment", "Amount"],
+      rows.map((t) => [t.transactionId, new Date(t.dateTime).toLocaleString(), t.branch?.branchName, t.cashier?.fullName, t.customer?.fullName || "Walk-in", t.paymentMethod, t.totalAmount])
     );
-    const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `billing-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <div className="staff-page">
