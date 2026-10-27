@@ -49,3 +49,7 @@ export const getTopProducts = (params = {}) =>
 
 export const getTopServices = (params = {}) =>
   api.get("/reports/top-services", { params }).then((r) => r.data);
+
+// The full grouped manager's report. params: { branchId?, startDate, endDate, period: "daily" | "monthly" }
+export const getBusinessReport = (params) =>
+  api.get("/reports/business", { params }).then((r) => r.data);
