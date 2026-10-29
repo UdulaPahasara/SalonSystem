@@ -146,8 +146,8 @@ Customers can browse the salon without logging in. The public site uses **Malroo
 
 | Role | Features |
 |------|----------|
-| Owner (Admin) | Staff users, branches, salary payments, inventory, billing history (all branches or one), revenue reports, appointment history |
-| Branch Manager | Branch services, stock request approval, branch stock, billing, branch revenue report, appointments |
+| Owner (Admin) | Staff users, branches, salary payments, inventory, billing history (all branches or one), business reports (sales, staff, customers, stock, salaries), appointment history |
+| Branch Manager | Branch services, stock request approval, branch stock, billing, branch business report, appointments |
 | Reception | Appointments, customers (search, register, update, delete), website enquiries |
 | Cashier | Point of Sale checkout, appointments, transaction history |
 | Product Manager | Products, inventory levels, stock requests and history |
@@ -166,6 +166,23 @@ Cashier → **Point of Sale**: add services and products, pick a customer (or wa
 - Before going live, set `APP_SECRET` to a long random string. Other settings (`APP_CORS_ORIGINS`, `APP_TIMEZONE`, `SALON_RESET_DEFAULT_PASSWORDS`, `SALON_LOYALTY_RS_PER_POINT`) are listed in `.env.example`.
 - Changed passwords are kept across restarts. If your database was created before this change and still has old default passwords, start once with `SALON_RESET_DEFAULT_PASSWORDS=true`.
 - Loyalty: tick the loyalty box when booking to enrol a customer. Members earn 1 point per Rs. 100 spent at checkout (points cannot be redeemed yet).
+
+### Reports (Owner and Branch Manager)
+
+Reports → pick a timeframe (or your own dates) and, as Owner, one branch or all. Everything is grouped into tabs, each compared with the previous period of the same length:
+
+| Tab | What it answers |
+|-----|-----------------|
+| Overview | Headline numbers and a plain-language list of findings ("revenue is down 12%", "Rose Nail Polish is out of stock") |
+| Sales | Revenue over time, by category, by payment method, by branch |
+| Services & products | What sells, what is growing or falling, stock left for best sellers |
+| Staff | Appointments, completion rate and booked value per stylist; sales per cashier |
+| Customers | New vs returning, loyalty members, top customers, customers to win back (no visit in 60+ days) |
+| Appointments | Completed vs cancelled, busiest days and hours, most booked services |
+| Stock | Out-of-stock and low items, products that are not selling, stock request status |
+| Salaries & profit | Salaries paid by month, branch and role, and what is left from sales (Owner only) |
+
+**Download report…** exports any of these tabs to Excel (a sheet per tab) or PDF. The API is `GET /salon-app/api/reports/business`; Managers can only request their own branch, and salary figures are only returned to the Owner. "Left after salaries" is before rent and other expenses, because salaries are the only cost the system records.
 
 ## Development
 
