@@ -83,7 +83,7 @@ export default function ServiceHistory() {
   const kpis = [
     { label: "Services performed", value: performed, hint: "In the selected period" },
     { label: "Service revenue", value: rs(revenue), hint: "From checkout sales" },
-    { label: "Average price", value: rs(performed ? revenue / performed : 0), hint: "Per service" },
+    { label: "Average price", value: rs(Math.round(performed ? revenue / performed : 0)), hint: "Per service" },
     { label: "Most popular", value: popular ? popular.name : "—", hint: popular ? `${popular.count} performed` : "No services yet" },
   ];
 
