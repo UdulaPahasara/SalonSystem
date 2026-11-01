@@ -7,17 +7,22 @@ import PageHeader from "../components/staff/PageHeader";
 import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
 import { rs } from "../utils/format";
+import SalaryHistory from "../components/staff/SalaryHistory";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
 import "../styles/StaffPages.css";
 
 const FILTERS = ["All", "Unpaid", "Paid"];
+const pad = (n) => String(n).padStart(2, "0");
+const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const shiftMonth = (m, n) => { const [y, mo] = m.split("-").map(Number); const d = new Date(y, mo - 1 + n, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
 
 export default function SalaryManagement() {
   const { userRole } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [tab, setTab] = useState("payroll");
+  const [month, setMonth] = useState(currentMonth());
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -68,7 +73,9 @@ export default function SalaryManagement() {
       toast.success(`Paid ${member.name} for ${monthLabel}.`);
       load();
     } catch (err) {
-      toast.error("Failed to record payment.");
+      const msg = err.response?.data;
+      toast.error(typeof msg === "string" && msg ? msg : "Failed to record payment.");
+      load();
     }
   };
 
@@ -108,6 +115,15 @@ export default function SalaryManagement() {
         backTo={getStaffHomePath(userRole)}
       />
 
+      <div className="tab-bar" role="tablist" aria-label="Salary views">
+        <button role="tab" aria-selected={tab === "payroll"} className={`tab-btn${tab === "payroll" ? " active" : ""}`} onClick={() => setTab("payroll")}>Monthly payroll</button>
+        <button role="tab" aria-selected={tab === "history"} className={`tab-btn${tab === "history" ? " active" : ""}`} onClick={() => setTab("history")}>Payment history</button>
+      </div>
+
+      {tab === "history" ? (
+        <SalaryHistory onOpenMonth={(m) => { setMonth(m); setTab("payroll"); }} />
+      ) : (
+      <>
       <section className="dash-kpis staff-kpis" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }} aria-label="Payroll summary">
         {kpis.map((k) => (
           <article key={k.label} className="dash-kpi">
@@ -136,10 +152,14 @@ export default function SalaryManagement() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <label className="staff-field-inline" htmlFor="salary-month">
-          Month
-          <input id="salary-month" type="month" className="staff-input" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} />
-        </label>
+        <div className="month-nav" role="group" aria-label="Payroll month">
+          <button type="button" className="icon-btn" aria-label="Previous month" onClick={() => setMonth(shiftMonth(month, -1))}>‹</button>
+          <input id="salary-month" type="month" className="staff-input" aria-label="Month" value={month} max={currentMonth()} onChange={(e) => e.target.value && setMonth(e.target.value)} />
+          <button type="button" className="icon-btn" aria-label="Next month" disabled={month >= currentMonth()} onClick={() => setMonth(shiftMonth(month, 1))}>›</button>
+          {month !== currentMonth() && (
+            <button type="button" className="link-btn" onClick={() => setMonth(currentMonth())}>This month</button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -195,6 +215,8 @@ export default function SalaryManagement() {
         </table>
       )}
       {!loading && !error && <Pagination page={page} total={rowCount} onPage={setPage} />}
+      </>
+      )}
 
       {editing && (
         <div className="modal-overlay" onClick={() => setEditing(null)}>
