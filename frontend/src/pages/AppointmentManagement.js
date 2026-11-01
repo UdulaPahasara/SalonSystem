@@ -8,13 +8,14 @@ import { useConfirm } from "../context/ConfirmContext";
 import PageHeader from "../components/staff/PageHeader";
 import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
-import { PERIODS, inPeriod } from "../utils/format";
+import { DEFAULT_PERIOD, PERIOD_OPTIONS, inPeriod, periodKey } from "../utils/period";
+import PeriodFilter from "../components/staff/PeriodFilter";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
 import "../styles/StaffPages.css";
 
 const STATUSES = ["All", "Booked", "Completed", "Cancelled"];
-const APPT_PERIODS = [{ id: "upcoming", label: "Upcoming" }, ...PERIODS];
+const APPT_PERIODS = [{ id: "upcoming", label: "Upcoming" }, ...PERIOD_OPTIONS];
 const EMPTY = { customerId: "", serviceType: "", date: "", time: "", applyLoyalty: false };
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -34,7 +35,7 @@ function AppointmentManagement() {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("All");
-  const [period, setPeriod] = useState("upcoming");
+  const [period, setPeriod] = useState({ ...DEFAULT_PERIOD, period: "upcoming" });
   const [query, setQuery] = useState("");
 
   const loadData = async () => {
@@ -62,17 +63,16 @@ function AppointmentManagement() {
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const now = new Date();
     const list = appointments.filter((a) => {
-      if (period === "upcoming" ? new Date(a.appointmentTime) < now : !inPeriod(a.appointmentTime, period)) return false;
+      if (!inPeriod(a.appointmentTime, period)) return false;
       if (status !== "All" && statusOf(a) !== status.toUpperCase()) return false;
       return !q || [a.customer?.fullName, a.serviceType, a.assignedStaff?.fullName].some((v) => (v || "").toLowerCase().includes(q));
     });
     // upcoming reads soonest-first; everything else newest-first
-    return list.sort((a, b) => (period === "upcoming" ? 1 : -1) * (new Date(a.appointmentTime) - new Date(b.appointmentTime)));
+    return list.sort((a, b) => (period.period === "upcoming" ? 1 : -1) * (new Date(a.appointmentTime) - new Date(b.appointmentTime)));
   }, [appointments, status, period, query]);
 
-  const { page, setPage, pageItems, total } = usePagination(rows, [status, period, query].join("|"));
+  const { page, setPage, pageItems, total } = usePagination(rows, [status, periodKey(period), query].join("|"));
 
   const today = new Date().toDateString();
   const kpis = [
@@ -182,11 +182,7 @@ function AppointmentManagement() {
           </div>
           <input className="staff-input staff-search" type="search" placeholder="Search customer, service or staff" aria-label="Search appointments" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <select className="staff-input" aria-label="Period" value={period} onChange={(e) => setPeriod(e.target.value)}>
-          {APPT_PERIODS.map((p) => (
-            <option key={p.id} value={p.id}>{p.label}</option>
-          ))}
-        </select>
+        <PeriodFilter value={period} onChange={setPeriod} options={APPT_PERIODS} />
       </div>
 
       {loading ? (

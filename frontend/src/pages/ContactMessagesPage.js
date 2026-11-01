@@ -6,7 +6,8 @@ import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/staff/PageHeader";
 import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
-import { PERIODS, inPeriod } from "../utils/format";
+import { DEFAULT_PERIOD, inPeriod, periodKey } from "../utils/period";
+import PeriodFilter from "../components/staff/PeriodFilter";
 import "../components/DashboardLayout.css";
 import "../styles/StaffPages.css";
 
@@ -17,7 +18,7 @@ export default function ContactMessagesPage() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [period, setPeriod] = useState("all");
+  const [period, setPeriod] = useState(DEFAULT_PERIOD);
   const [query, setQuery] = useState("");
 
   const load = () =>
@@ -37,7 +38,7 @@ export default function ContactMessagesPage() {
     );
   }, [messages, period, query]);
 
-  const { page, setPage, pageItems, total } = usePagination(rows, [period, query].join("|"));
+  const { page, setPage, pageItems, total } = usePagination(rows, [periodKey(period), query].join("|"));
 
   const handleDelete = async (m) => {
     const ok = await confirm(`Delete the message from ${m.fullName}?`, { title: "Delete message", danger: true, confirmLabel: "Delete" });
@@ -61,11 +62,7 @@ export default function ContactMessagesPage() {
 
       <div className="staff-filter-bar">
         <input className="staff-input staff-search" type="search" placeholder="Search name, email or message" aria-label="Search messages" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <select className="staff-input" aria-label="Period" value={period} onChange={(e) => setPeriod(e.target.value)}>
-          {PERIODS.map((p) => (
-            <option key={p.id} value={p.id}>{p.label}</option>
-          ))}
-        </select>
+        <PeriodFilter value={period} onChange={setPeriod} />
       </div>
 
       {loading ? (
