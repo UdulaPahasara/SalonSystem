@@ -2,6 +2,8 @@ package Salon.SalonManagementSystem.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "stock_requests")
 public class StockRequest {
@@ -25,6 +27,23 @@ public class StockRequest {
     @ManyToOne
     @JoinColumn(name = "requested_by")
     private Users requestedBy;
+
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
     // getters & setters
 
