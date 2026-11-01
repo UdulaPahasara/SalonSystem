@@ -4,6 +4,7 @@ import { getAllTransactions, getTransactionsByBranch } from "../api/usersApi";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
 import { rs, PERIODS, inPeriod, downloadCsv } from "../utils/format";
 import "../components/DashboardLayout.css";
@@ -13,7 +14,7 @@ import "../styles/StaffPages.css";
 const METHODS = ["All", "Cash", "Card"];
 const itemName = (i) => (i.service ? i.service.name : i.product ? i.product.productName : "Item");
 
-export default function AdminBillingHistory() {
+export default function AdminBillingHistory({ fixedBranchId, title = "Billing & Payments", subtitle = "Every sale across your branches." }) {
   const { userRole } = useAuth();
   const toast = useToast();
   const [branches, setBranches] = useState([]);
@@ -25,17 +26,18 @@ export default function AdminBillingHistory() {
   const [open, setOpen] = useState(null);
 
   useEffect(() => {
-    getBranches().then(setBranches).catch(() => {});
-  }, []);
+    if (!fixedBranchId) getBranches().then(setBranches).catch(() => {});
+  }, [fixedBranchId]);
 
   useEffect(() => {
     setLoading(true);
-    (branchId ? getTransactionsByBranch(branchId) : getAllTransactions())
+    const target = fixedBranchId || branchId;
+    (target ? getTransactionsByBranch(target) : getAllTransactions())
       .then((data) => setTransactions([...data].sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime))))
       .catch(() => toast.error("Error loading transactions."))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [branchId]);
+  }, [branchId, fixedBranchId]);
 
   const rows = useMemo(
     () =>
@@ -45,6 +47,7 @@ export default function AdminBillingHistory() {
     [transactions, period, method]
   );
 
+  const { page, setPage, pageItems, total: rowCount } = usePagination(rows, [method, period, branchId].join("|"));
   const total = rows.reduce((s, t) => s + Number(t.totalAmount || 0), 0);
   const cardCount = rows.filter((t) => (t.paymentMethod || "").toUpperCase() === "CARD").length;
   const kpis = [
@@ -64,8 +67,8 @@ export default function AdminBillingHistory() {
   return (
     <div className="staff-page">
       <PageHeader
-        title="Billing & Payments"
-        subtitle="Every sale across your branches."
+        title={title}
+        subtitle={subtitle}
         backTo={getStaffHomePath(userRole)}
         actions={
           <button className="staff-btn staff-btn-secondary" onClick={exportCsv} disabled={rows.length === 0}>
@@ -98,12 +101,14 @@ export default function AdminBillingHistory() {
               <option key={p.id} value={p.id}>{p.label}</option>
             ))}
           </select>
-          <select className="staff-input" aria-label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-            <option value="">All branches</option>
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>{b.branchName}</option>
-            ))}
-          </select>
+          {!fixedBranchId && (
+            <select className="staff-input" aria-label="Branch" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+              <option value="">All branches</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>{b.branchName}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -121,7 +126,7 @@ export default function AdminBillingHistory() {
             <tr>
               <th>Receipt</th>
               <th>Date</th>
-              <th>Branch</th>
+              {!fixedBranchId && <th>Branch</th>}
               <th>Customer</th>
               <th>Payment</th>
               <th className="num">Amount</th>
@@ -129,7 +134,7 @@ export default function AdminBillingHistory() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((t) => (
+            {pageItems.map((t) => (
               <React.Fragment key={t.transactionId}>
                 <tr>
                   <td className="staff-cell-strong">#{t.transactionId}</td>
@@ -137,7 +142,7 @@ export default function AdminBillingHistory() {
                     {new Date(t.dateTime).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                     {t.cashier && <span className="cell-sub">by {t.cashier.fullName}</span>}
                   </td>
-                  <td>{t.branch ? t.branch.branchName : "—"}</td>
+                  {!fixedBranchId && <td>{t.branch ? t.branch.branchName : "—"}</td>}
                   <td>
                     {t.customer ? t.customer.fullName : <span className="staff-cell-muted">Walk-in</span>}
                     {t.customer && t.customer.loyaltyMember && <span className="status-badge loyalty">Loyalty</span>}
@@ -152,7 +157,7 @@ export default function AdminBillingHistory() {
                 </tr>
                 {open === t.transactionId && (
                   <tr className="row-detail">
-                    <td colSpan="7">
+                    <td colSpan={fixedBranchId ? 6 : 7}>
                       <ul className="row-detail-list">
                         {(t.items || []).map((i) => (
                           <li key={i.id}>
@@ -167,11 +172,12 @@ export default function AdminBillingHistory() {
                 )}
               </React.Fragment>
             ))}
-            {rows.length === 0 && <tr className="empty-row"><td colSpan="7">No transactions match your filters.</td></tr>}
+            {rows.length === 0 && <tr className="empty-row"><td colSpan={fixedBranchId ? 6 : 7}>No transactions match your filters.</td></tr>}
           </tbody>
         </table>
         </div>
       )}
+      {!loading && transactions.length > 0 && <Pagination page={page} total={rowCount} onPage={setPage} />}
     </div>
   );
 }
