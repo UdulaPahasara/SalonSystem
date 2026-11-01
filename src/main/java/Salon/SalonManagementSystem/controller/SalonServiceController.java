@@ -37,6 +37,7 @@ public class SalonServiceController {
     public ResponseEntity<?> create(@RequestBody SalonService service) {
         String problem = validate(service);
         if (problem != null) return ResponseEntity.badRequest().body(problem);
+        Salon.SalonManagementSystem.security.AuthContext.requireBranch(service.getBranch().getId());
         return ResponseEntity.ok(salonServiceRepository.save(service));
     }
 
@@ -44,8 +45,10 @@ public class SalonServiceController {
     public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody SalonService service) {
         String problem = validate(service);
         if (problem != null) return ResponseEntity.badRequest().body(problem);
+        Salon.SalonManagementSystem.security.AuthContext.requireBranch(service.getBranch().getId());
         return salonServiceRepository.findById(id)
                 .<ResponseEntity<?>>map(existing -> {
+                    Salon.SalonManagementSystem.security.AuthContext.requireBranch(existing.getBranch() == null ? null : existing.getBranch().getId());
                     existing.setName(service.getName());
                     existing.setCategory(service.getCategory());
                     existing.setPrice(service.getPrice());
@@ -58,11 +61,14 @@ public class SalonServiceController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Integer id) {
-        if (!salonServiceRepository.existsById(id)) {
+        SalonService existing = salonServiceRepository.findById(id).orElse(null);
+        if (existing == null) {
             return ResponseEntity.notFound().build();
         }
+        Salon.SalonManagementSystem.security.AuthContext.requireBranch(existing.getBranch() == null ? null : existing.getBranch().getId());
         try {
-            salonServiceRepository.deleteById(id);
+            salonServiceRepository.delete(existing);
+            salonServiceRepository.flush();
             return ResponseEntity.noContent().build();
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             return ResponseEntity.status(409).body("This service appears in past sales and can't be deleted.");

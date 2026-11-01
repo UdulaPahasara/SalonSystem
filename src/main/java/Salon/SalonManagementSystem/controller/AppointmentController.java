@@ -12,14 +12,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/appointments")
-@CrossOrigin(origins = "http://localhost:3000")
 public class AppointmentController {
 
     @Autowired
     private AppointmentService appointmentService;
-
-    @Autowired
-    private Salon.SalonManagementSystem.repository.ServiceStaffRepository serviceStaffRepository;
 
     @PostMapping
     public ResponseEntity<?> createAppointment(@RequestBody Map<String, Object> payload) {
@@ -41,18 +37,17 @@ public class AppointmentController {
 
             Appointment appt = new Appointment();
             if (payload.get("staffId") != null) {
-                Integer staffId = ((Number) payload.get("staffId")).intValue();
-                appt.setAssignedStaff(serviceStaffRepository.findById(staffId)
-                        .orElseThrow(() -> new RuntimeException("Staff member not found")));
+                Salon.SalonManagementSystem.model.ServiceStaff ref = new Salon.SalonManagementSystem.model.ServiceStaff();
+                ref.setId(((Number) payload.get("staffId")).intValue());
+                appt.setAssignedStaff(ref);
             }
             appt.setServiceType(serviceType);
             appt.setAppointmentTime(LocalDateTime.parse(isoDate));
             appt.setApplyLoyalty(applyLoyalty);
 
             return ResponseEntity.ok(appointmentService.createAppointment(appt, customerId, branchId));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body("Error creating appointment: " + e.getMessage());
+        } catch (java.time.format.DateTimeParseException | NullPointerException | ClassCastException e) {
+            return ResponseEntity.badRequest().body("Check the customer, service, date and time and try again.");
         }
     }
 
@@ -63,20 +58,12 @@ public class AppointmentController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAppointment(@PathVariable Integer id, @RequestBody Appointment details) {
-        try {
-            return ResponseEntity.ok(appointmentService.updateAppointment(id, details));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(appointmentService.updateAppointment(id, details));
     }
 
     @PutMapping("/{id}/status")
     public ResponseEntity<?> changeStatus(@PathVariable Integer id, @RequestBody Map<String, String> body) {
-        try {
-            return ResponseEntity.ok(appointmentService.changeStatus(id, body.get("status")));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        return ResponseEntity.ok(appointmentService.changeStatus(id, body.get("status")));
     }
 
     @DeleteMapping("/{id}")
