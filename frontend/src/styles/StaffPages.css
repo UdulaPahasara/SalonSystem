@@ -100,3 +100,6 @@
 .export-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem; }
 .form-check.disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 520px) { .export-formats, .export-sections { grid-template-columns: 1fr; } }
+
+/* Point of sale: checking out a booked visit */
+.pos-banner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; padding: 0.85rem 1.1rem; border: 1px solid #e6c9a0; border-radius: 8px; background: #fdf6e8; color: #53112f; }
