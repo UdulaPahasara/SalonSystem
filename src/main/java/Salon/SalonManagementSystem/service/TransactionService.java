@@ -23,6 +23,7 @@ public class TransactionService {
     private final ProductRepository productRepo;
     private final BranchInventoryRepository inventoryRepo;
     private final AppointmentRepository appointmentRepo;
+    private final int rsPerPoint;
 
     public TransactionService(
             TransactionRepository transactionRepo,
@@ -32,7 +33,8 @@ public class TransactionService {
             SalonServiceRepository serviceRepo,
             ProductRepository productRepo,
             BranchInventoryRepository inventoryRepo,
-            AppointmentRepository appointmentRepo) {
+            AppointmentRepository appointmentRepo,
+            @org.springframework.beans.factory.annotation.Value("${salon.loyalty.rs-per-point:100}") int rsPerPoint) {
         this.transactionRepo = transactionRepo;
         this.branchRepo = branchRepo;
         this.usersRepo = usersRepo;
@@ -41,11 +43,17 @@ public class TransactionService {
         this.productRepo = productRepo;
         this.inventoryRepo = inventoryRepo;
         this.appointmentRepo = appointmentRepo;
+        this.rsPerPoint = rsPerPoint;
     }
 
     // Prices come from the database, never from the client; product stock is deducted.
     @Transactional
     public Transaction checkout(CheckoutRequest req) {
+        Salon.SalonManagementSystem.security.AuthUser me = Salon.SalonManagementSystem.security.AuthContext.current();
+        if (me != null) {
+            Salon.SalonManagementSystem.security.AuthContext.requireBranch(req.getBranchId());
+            req.setCashierId(me.id()); // the cashier is whoever is signed in
+        }
         if (req.getItems() == null || req.getItems().isEmpty()) {
             throw new RuntimeException("Add at least one service or product");
         }
@@ -98,12 +106,11 @@ public class TransactionService {
                         .orElseThrow(() -> new RuntimeException("Product not found"));
                 BranchInventory stock = inventoryRepo.findInventoryByBranchAndProduct(branch, product)
                         .orElseThrow(() -> new RuntimeException(product.getProductName() + " is not stocked at this branch"));
-                if (stock.getQuantity() == null || stock.getQuantity() < qty) {
-                    throw new RuntimeException("Only " + (stock.getQuantity() == null ? 0 : stock.getQuantity())
-                            + " " + product.getProductName() + " left in stock");
+                if (inventoryRepo.deductStock(branch, product, qty) == 0) {
+                    int left = inventoryRepo.findInventoryByBranchAndProduct(branch, product)
+                            .map(s -> s.getQuantity() == null ? 0 : s.getQuantity()).orElse(0);
+                    throw new RuntimeException("Only " + left + " " + product.getProductName() + " left in stock");
                 }
-                stock.setQuantity(stock.getQuantity() - qty);
-                inventoryRepo.save(stock);
                 item.setProduct(product);
                 item.setUnitPrice(product.getUnitPrice());
             }
@@ -116,13 +123,26 @@ public class TransactionService {
         Transaction saved = transactionRepo.save(tx);
 
         // Paying for a booked visit completes it.
-        if (req.getAppointmentId() != null) {
-            appointmentRepo.findById(req.getAppointmentId()).ifPresent(a -> {
-                if ("BOOKED".equals(a.getStatus())) {
-                    a.setStatus("COMPLETED");
-                    appointmentRepo.save(a);
-                }
-            });
+        Appointment visit = req.getAppointmentId() == null ? null : appointmentRepo.findById(req.getAppointmentId()).orElse(null);
+        if (visit != null) {
+            if (visit.getBranch() == null || !visit.getBranch().getId().equals(branch.getId())) {
+                throw new RuntimeException("That appointment belongs to a different branch");
+            }
+            if ("BOOKED".equals(visit.getStatus())) {
+                visit.setStatus("COMPLETED");
+                appointmentRepo.save(visit);
+            }
+        }
+
+        // Loyalty: members earn 1 point per `rsPerPoint` rupees. Ticking "loyalty" on the booking enrols the customer.
+        Customer customer = saved.getCustomer();
+        if (customer != null && rsPerPoint > 0) {
+            boolean enrol = visit != null && visit.isApplyLoyalty();
+            if (customer.isLoyaltyMember() || enrol) {
+                customer.setLoyaltyMember(true);
+                customer.setLoyaltyPoints(customer.getLoyaltyPoints() + total.divide(BigDecimal.valueOf(rsPerPoint), 0, java.math.RoundingMode.DOWN).intValue());
+                customerRepo.save(customer);
+            }
         }
         return saved;
     }
