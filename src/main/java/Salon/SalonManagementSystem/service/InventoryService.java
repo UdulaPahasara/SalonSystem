@@ -30,7 +30,8 @@ public class InventoryService {
      * Get inventory for a product filtered by Product Manager's assigned branches
      */
     public List<InventoryViewDTO> getByProductAndManager(Integer productId, Integer userId) {
-        return repo.findByProductAndManager(productId, userId)
+        // Product Managers see stock at every branch
+        return repo.findByProduct_ProductId(productId)
                 .stream()
                 .map(this::toDTO)
                 .toList();

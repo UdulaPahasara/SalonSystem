@@ -67,10 +67,11 @@ public class ProductService {
     }
 
     /**
-     * Get products filtered by Product Manager's assigned branches
+     * Product Managers look after every branch (there is no branch-assignment table),
+     * so they see the whole catalogue.
      */
     public List<Product> getProductsByManager(Integer userId) {
-        return repo.findProductsByManagerBranches(userId);
+        return repo.findAll();
     }
 
 }
