@@ -283,3 +283,20 @@ export function totalsRow(table) {
   });
   return row;
 }
+
+/**
+ * Opens a PDF of the report in a new browser tab so it can be read before downloading.
+ * The tab is opened straight away (inside the click) so pop-up blockers allow it; if it is blocked the PDF downloads instead.
+ */
+export async function previewReportPdf(getReport) {
+  const win = window.open("", "_blank");
+  if (win) win.document.write("<p style=\"font-family:sans-serif;padding:2rem;color:#53112f\">Preparing the report…</p>");
+  try {
+    const [report, { exportReportPdf }] = await Promise.all([getReport(), import("./reportExport")]);
+    if (!win) return exportReportPdf(report);
+    win.location.href = await exportReportPdf(report, { preview: true });
+  } catch (err) {
+    if (win) win.close();
+    throw err;
+  }
+}

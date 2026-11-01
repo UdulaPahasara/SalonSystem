@@ -182,7 +182,7 @@ Reports → pick a timeframe (or your own dates) and, as Owner, one branch or al
 | Stock | Out-of-stock and low items, how many days the stock lasts at the current sales pace, how much to reorder, products that are not selling |
 | Salaries & profit | Salaries paid by month, branch and role, and what is left from sales (Owner only) |
 
-Every tab has its own **Excel** and **PDF** buttons (for example `stock-report-<date>.xlsx`) that download just that tab for the period and branch on screen. **Download report…** at the top exports several tabs together, a sheet per tab in Excel or sections in one PDF. The API is `GET /salon-app/api/reports/business`; Managers can only request their own branch, and salary figures are only returned to the Owner. "Left after salaries" is before rent and other expenses, because salaries are the only cost the system records.
+Every tab has **Preview** (opens the report as a PDF in a new browser tab), **Excel** and **PDF** buttons that cover just that tab for the period and branch on screen (for example `stock-report-<date>.xlsx`). **All reports & downloads** lists every report with the same three buttons, its own timeframe and branch, and an "All reports" row for one combined file. The API is `GET /salon-app/api/reports/business`; Managers can only request their own branch, and salary figures are only returned to the Owner. "Left after salaries" is before rent and other expenses, because salaries are the only cost the system records.
 
 ## Development
 

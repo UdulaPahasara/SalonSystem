@@ -7,7 +7,7 @@ import BarChart from "../components/staff/BarChart";
 import { getStaffHomePath } from "../utils/staffNav";
 import { rs } from "../utils/format";
 import { PRESETS, rangeFor, addDays, dateKey, fmtDate, loadReport, buildReportView } from "../utils/reportData";
-import { buildSections, formatCell, isNumeric, totalsRow } from "../utils/reportTables";
+import { buildSections, formatCell, isNumeric, totalsRow, previewReportPdf } from "../utils/reportTables";
 import ExportReportDialog from "../components/staff/ExportReportDialog";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
@@ -105,6 +105,10 @@ export default function ReportsPage() {
     if (!section) return;
     setSaving(format);
     try {
+      if (format === "preview") {
+        await previewReportPdf(async () => ({ periodLabel, branchName, generatedAt: new Date().toLocaleString(), sections: [section] }));
+        return;
+      }
       const { exportReportExcel, exportReportPdf } = await import("../utils/reportExport");
       const report = { periodLabel, branchName, generatedAt: new Date().toLocaleString(), sections: [section] };
       await (format === "excel" ? exportReportExcel(report) : exportReportPdf(report));
@@ -134,7 +138,7 @@ export default function ReportsPage() {
         backTo={getStaffHomePath(userRole)}
         actions={
           <button className="staff-btn staff-btn-primary" onClick={() => setExportOpen(true)}>
-            Download report…
+            All reports & downloads
           </button>
         }
       />
@@ -204,8 +208,11 @@ export default function ReportsPage() {
               <div className="report-tab-head">
                 <p className="report-intro">{section.intro}</p>
                 <div className="report-tab-actions" role="group" aria-label={`Download ${section.label}`}>
-                  <button type="button" className="staff-btn staff-btn-secondary" disabled={!!saving} onClick={() => downloadTab("excel")}>{saving === "excel" ? "Preparing…" : `${section.label}: Excel`}</button>
-                  <button type="button" className="staff-btn staff-btn-secondary" disabled={!!saving} onClick={() => downloadTab("pdf")}>{saving === "pdf" ? "Preparing…" : `${section.label}: PDF`}</button>
+                  {[["preview", "Preview"], ["excel", "Excel"], ["pdf", "PDF"]].map(([f, text]) => (
+                    <button key={f} type="button" className="staff-btn staff-btn-secondary" disabled={!!saving} aria-label={`${text} ${section.label} report`} onClick={() => downloadTab(f)}>
+                      {saving === f ? "Preparing…" : text}
+                    </button>
+                  ))}
                 </div>
               </div>
               {section.id === "overview" && (

@@ -32,8 +32,11 @@ export async function exportReportExcel(report) {
   const sheets = report.sections.map((sec) => {
     const data = [[{ value: sec.label, fontWeight: "bold", fontSize: 14 }], [{ value: `${SALON_INFO.name} | ${report.periodLabel} | ${report.branchName}` }], []];
     let widest = 0;
+    const widths = [];
     sec.tables.forEach((t) => {
       widest = Math.max(widest, t.columns.length);
+      const fit = (i, text) => { widths[i] = Math.max(widths[i] || 10, Math.min(48, String(text ?? "").length + 2)); };
+      t.columns.forEach((c, i) => { fit(i, c.label); t.rows.forEach((r) => fit(i, c.wrap ? "" : formatCell(c.type, r[c.key]))); });
       data.push([{ value: t.title, fontWeight: "bold", fontSize: 12 }]);
       if (t.note) data.push([{ value: t.note, textColor: "#806774" }]);
       data.push(t.columns.map((c) => head(c.label)));
@@ -44,13 +47,14 @@ export async function exportReportExcel(report) {
     let name = sec.label.replace(/[\\/?*[\]:]/g, " ").slice(0, 31);
     for (let n = 2; used.has(name); n++) name = `${name.slice(0, 28)} ${n}`;
     used.add(name);
-    return { sheet: name, columns: Array.from({ length: Math.max(widest, 2) }, (_, i) => ({ width: i === 0 ? 34 : 18 })), data };
+    return { sheet: name, columns: Array.from({ length: Math.max(widest, 2) }, (_, i) => ({ width: widths[i] || 14 })), data };
   });
 
   await writeExcelFile(sheets).toFile(`${fileBase(report)}.xlsx`);
 }
 
-export async function exportReportPdf(report) {
+/** Saves the PDF, or with { preview: true } returns a blob URL to show it in a browser tab instead. */
+export async function exportReportPdf(report, { preview = false } = {}) {
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
   const W = doc.internal.pageSize.getWidth();
@@ -136,5 +140,7 @@ export async function exportReportPdf(report) {
     doc.text(`${SALON_INFO.name}  |  ${SALON_INFO.phone}`, M, H - 22);
     doc.text(`Page ${i} of ${pages}`, W - M, H - 22, { align: "right" });
   }
+  if (preview) return doc.output("bloburl", { filename: `${fileBase(report)}.pdf` });
   doc.save(`${fileBase(report)}.pdf`);
+  return null;
 }

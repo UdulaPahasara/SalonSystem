@@ -88,7 +88,7 @@
 .icon-btn:hover:not(:disabled) { background: #f5e9ed; }
 
 /* Export dialog */
-.export-dialog { max-width: 560px; }
+.export-dialog { max-width: 680px; }
 .export-group { margin: 0 0 1rem; padding: 0; border: 0; }
 .export-group legend { margin-bottom: 0.4rem; padding: 0; color: #53112f; font-size: 0.88rem; font-weight: 600; }
 .export-formats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
@@ -132,3 +132,13 @@
 .report-tab-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; margin-bottom: 1rem; }
 .report-tab-head .report-intro { margin: 0; flex: 1 1 22rem; }
 .report-tab-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.export-list { list-style: none; margin: 0 0 1rem; padding: 0; border: 1px solid #e2d7cf; border-radius: 8px; max-height: 52vh; overflow-y: auto; }
+.export-item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; padding: 0.7rem 0.9rem; border-top: 1px solid #efe6df; }
+.export-item:first-child { border-top: 0; }
+.export-item-all { background: #fbf3f5; }
+.export-item-text { display: grid; gap: 0.1rem; min-width: 0; }
+.export-item-text strong { color: #3a0a22; font-size: 0.95rem; }
+.export-item-text small { color: #806774; font-size: 0.8rem; }
+.export-item-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+.export-btn { padding: 0.35rem 0.75rem; min-height: 34px; font-size: 0.85rem; }
+@media (max-width: 560px) { .export-item { flex-direction: column; align-items: stretch; } .export-item-actions .export-btn { flex: 1; } }
