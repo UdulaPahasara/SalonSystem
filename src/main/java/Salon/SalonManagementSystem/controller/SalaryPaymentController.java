@@ -10,7 +10,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/salary")
-@CrossOrigin(origins = "http://localhost:3000")
 public class SalaryPaymentController {
 
     @Autowired
@@ -44,7 +43,6 @@ public class SalaryPaymentController {
 
             return ResponseEntity.ok(salaryService.paySalary(type, id, amount, month));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -55,6 +53,9 @@ public class SalaryPaymentController {
             String type = (String) payload.get("type");
             Integer id = ((Number) payload.get("id")).intValue();
             Double newSalary = ((Number) payload.get("baseSalary")).doubleValue();
+            if (newSalary.isNaN() || newSalary < 0 || newSalary > 10_000_000) {
+                return ResponseEntity.badRequest().body("Salary must be between 0 and 10,000,000.");
+            }
 
             salaryService.updateBaseSalary(type, id, newSalary);
             return ResponseEntity.ok().build();

@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/stock-requests")
-@CrossOrigin
 public class StockRequestController {
 
     private final StockRequestService service;
@@ -38,6 +37,8 @@ public class StockRequestController {
     public ResponseEntity<?> approve(@PathVariable Integer id) {
         try {
             return ResponseEntity.ok(service.approve(id));
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -47,6 +48,8 @@ public class StockRequestController {
     public ResponseEntity<?> reject(@PathVariable Integer id) {
         try {
             return ResponseEntity.ok(service.reject(id));
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

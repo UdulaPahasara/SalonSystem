@@ -1,21 +1,8 @@
+import { SALON_INFO } from "../../utils/salonInfo";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAllServices } from "../../api/serviceApi";
 
-const FALLBACK_SERVICES = [
-  { category: "Hair Care", name: "Women's Haircut & Blow Dry", price: 3500, durationMins: 60 },
-  { category: "Hair Care", name: "Full Hair Colour", price: 8500, durationMins: 120 },
-  { category: "Hair Care", name: "Keratin Smoothing Treatment", price: 12000, durationMins: 150 },
-  { category: "Skin & Facials", name: "Classic Deep Cleansing Facial", price: 4500, durationMins: 60 },
-  { category: "Skin & Facials", name: "Gold Glow Facial", price: 6500, durationMins: 75 },
-  { category: "Nails", name: "Classic Manicure", price: 1800, durationMins: 45 },
-  { category: "Nails", name: "Gel Manicure", price: 3200, durationMins: 60 },
-  { category: "Nails", name: "Spa Pedicure", price: 3800, durationMins: 60 },
-  { category: "Bridal & Occasions", name: "Bridal Hair & Makeup Trial", price: 15000, durationMins: 120 },
-  { category: "Bridal & Occasions", name: "Party Makeup", price: 7500, durationMins: 90 },
-  { category: "Spa & Wellness", name: "Head & Shoulder Massage", price: 2500, durationMins: 30 },
-  { category: "Spa & Wellness", name: "Aromatherapy Body Relaxation", price: 9000, durationMins: 90 },
-];
 
 function groupByCategory(services) {
   return services.reduce((acc, service) => {
@@ -29,15 +16,15 @@ function groupByCategory(services) {
 export default function ServicesPage() {
   const [grouped, setGrouped] = useState({});
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
 
   useEffect(() => {
     getAllServices()
       .then((data) => {
-        const list = data && data.length > 0 ? data : FALLBACK_SERVICES;
-        setGrouped(groupByCategory(list));
+        setGrouped(groupByCategory(data || []));
       })
-      .catch(() => setGrouped(groupByCategory(FALLBACK_SERVICES)))
+      .catch(() => setFailed(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -67,6 +54,11 @@ export default function ServicesPage() {
 
       {loading ? (
         <p className="public-loading">Loading services...</p>
+      ) : failed || Object.keys(grouped).length === 0 ? (
+        <p className="public-loading">
+          {failed ? "We couldn't load our menu right now." : "Our menu is being updated."} Please{" "}
+          <a href={SALON_INFO.phoneHref}>call {SALON_INFO.phone}</a> for prices.
+        </p>
       ) : (
         Object.entries(grouped)
           .filter(([category]) => !activeCategory || category === activeCategory)

@@ -8,7 +8,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
-@CrossOrigin
 public class ProductController {
 
     private final ProductService service;
@@ -24,13 +23,23 @@ public class ProductController {
 
     @PostMapping
     public Product create(@RequestBody Product p) {
+        check(p);
         return service.save(p);
     }
 
     @PutMapping("/{id}")
     public Product update(@PathVariable Integer id,
             @RequestBody Product p) {
+        check(p);
         return service.update(id, p);
+    }
+
+    private void check(Product p) {
+        String name = p.getProductName() == null ? "" : p.getProductName().trim();
+        if (name.isEmpty() || name.length() > 150) throw new IllegalArgumentException("Product name is required (up to 150 characters).");
+        if (p.getUnitPrice() == null || p.getUnitPrice().signum() <= 0) throw new IllegalArgumentException("Unit price must be greater than zero.");
+        if (p.getLowStockLimit() != null && p.getLowStockLimit() < 0) throw new IllegalArgumentException("Low-stock limit can't be negative.");
+        p.setProductName(name);
     }
 
     @DeleteMapping("/{id}")

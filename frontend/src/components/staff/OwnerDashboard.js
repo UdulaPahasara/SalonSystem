@@ -6,6 +6,7 @@ import { getAllAppointments } from "../../api/appointmentApi";
 import { getAllStockRequests } from "../../api/stockRequestApi";
 import { getInventoryByBranch } from "../../api/productApi";
 import BarChart from "./BarChart";
+import { recentRange } from "../../utils/period";
 import "../../styles/Dashboard.css";
 
 const LOW_STOCK_LIMIT = 5; // matches the red highlight in Branch Inventory
@@ -40,7 +41,7 @@ export default function OwnerDashboard({ userName }) {
     const month = new Date().toISOString().slice(0, 7);
     (async () => {
       const [tx, appts, users, branches, stock, salary] = await Promise.allSettled([
-        getAllTransactions(),
+        getAllTransactions(recentRange()),
         getAllAppointments(null),
         getUsers(),
         getBranches(),

@@ -6,7 +6,7 @@ import PageHeader from "../components/staff/PageHeader";
 import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
 import { rs, downloadCsv } from "../utils/format";
-import { DEFAULT_PERIOD, inPeriod, periodKey } from "../utils/period";
+import { DEFAULT_PERIOD, inPeriod, periodKey, periodQuery } from "../utils/period";
 import PeriodFilter from "../components/staff/PeriodFilter";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
@@ -52,12 +52,14 @@ export default function ServiceHistory() {
   useEffect(() => {
     setLoading(true);
     setError(false);
-    const load = isOwner ? (branchId ? getTransactionsByBranch(branchId) : getAllTransactions()) : getTransactionsByBranch(ownBranchId);
+    const range = periodQuery(period);
+    const load = isOwner ? (branchId ? getTransactionsByBranch(branchId, range) : getAllTransactions(range)) : getTransactionsByBranch(ownBranchId, range);
     load
       .then((data) => setRowsAll(toServiceRows(data)))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [isOwner, branchId, ownBranchId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwner, branchId, ownBranchId, periodKey(period)]);
 
   const categories = useMemo(() => ["All", ...new Set(rowsAll.map((r) => r.category))], [rowsAll]);
 

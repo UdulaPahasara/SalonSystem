@@ -103,3 +103,9 @@
 
 /* Point of sale: checking out a booked visit */
 .pos-banner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; padding: 0.85rem 1.1rem; border: 1px solid #e6c9a0; border-radius: 8px; background: #fdf6e8; color: #53112f; }
+
+/* Phones: bigger tap targets in tables */
+@media (max-width: 520px) {
+  .link-btn, .dashboard-btn-edit, .dashboard-btn-delete, .dashboard-btn-primary { min-height: 38px; padding-top: 0.45rem; padding-bottom: 0.45rem; }
+  .staff-chip { min-height: 40px; }
+}

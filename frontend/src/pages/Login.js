@@ -74,7 +74,9 @@ function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() =>
+    new URLSearchParams(window.location.search).get("expired") ? "Your session has ended. Please sign in again." : ""
+  );
   const navigate = useNavigate();
   const { login: setAuthUser, user, isAuthenticated } = useAuth();
 
@@ -108,6 +110,8 @@ function Login() {
         setError("Cannot reach the server. Start the backend with: npm run start:api");
       } else if (status === 401) {
         setError("Invalid username or password. Please try again.");
+      } else if (status === 429) {
+        setError(err.response.data?.message || "Too many failed attempts. Please wait a few minutes and try again.");
       } else {
         setError("Login failed on the server. Restart the backend and try again.");
       }

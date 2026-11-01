@@ -316,7 +316,7 @@ function AppointmentManagement() {
               </div>
               <label className="form-check">
                 <input type="checkbox" checked={form.applyLoyalty} onChange={(e) => setForm({ ...form, applyLoyalty: e.target.checked })} />
-                Apply loyalty / add points
+                Enrol in loyalty and earn points when paid
               </label>
               <div className="modal-actions">
                 <button type="button" className="staff-btn staff-btn-secondary" onClick={closeDialog}>Close</button>

@@ -15,6 +15,9 @@ import Login from "./pages/Login";
 import ServicesPage from "./pages/public/ServicesPage";
 import AboutPage from "./pages/public/AboutPage";
 import ContactPage from "./pages/public/ContactPage";
+import NotFoundPage from "./pages/public/NotFoundPage";
+import PageTitle from "./components/PageTitle";
+import DialogAccessibility from "./components/DialogAccessibility";
 import PrivacyPolicyPage from "./pages/public/PrivacyPolicyPage";
 import TermsPage from "./pages/public/TermsPage";
 import RefundPolicyPage from "./pages/public/RefundPolicyPage";
@@ -49,6 +52,8 @@ function App() {
         <ConfirmProvider>
           <div className="App">
             <ScrollToTop />
+            <PageTitle />
+            <DialogAccessibility />
             <Routes>
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<Home />} />
@@ -59,6 +64,7 @@ function App() {
                 <Route path="/terms-of-service" element={<TermsPage />} />
                 <Route path="/refund-policy" element={<RefundPolicyPage />} />
                 <Route path="/cancellation-policy" element={<CancellationPolicyPage />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Route>
 
               <Route path="/login" element={<Login />} />

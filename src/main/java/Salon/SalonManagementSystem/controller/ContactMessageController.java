@@ -17,8 +17,23 @@ public class ContactMessageController {
     @Autowired
     private ContactMessageRepository contactMessageRepository;
 
+    // simple in-memory limit: 5 messages per address per hour
+    private final java.util.Map<String, java.util.Deque<Long>> recent = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private boolean tooManyFrom(String ip) {
+        long now = System.currentTimeMillis();
+        java.util.Deque<Long> times = recent.computeIfAbsent(ip, k -> new java.util.concurrent.ConcurrentLinkedDeque<>());
+        times.removeIf(t -> now - t > 3_600_000L);
+        if (times.size() >= 5) return true;
+        times.add(now);
+        return false;
+    }
+
     @PostMapping
-    public ResponseEntity<?> submit(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> submit(@RequestBody Map<String, String> body, jakarta.servlet.http.HttpServletRequest request) {
+        if (tooManyFrom(request.getRemoteAddr())) {
+            return ResponseEntity.status(429).body("Too many messages from your connection. Please try again later or call us.");
+        }
         String fullName = trim(body.get("fullName"));
         String email = trim(body.get("email"));
         String message = trim(body.get("message"));
@@ -31,6 +46,17 @@ public class ContactMessageController {
         }
         if (message == null || message.isEmpty()) {
             return ResponseEntity.badRequest().body("Message is required.");
+        }
+
+        if (fullName.length() > 100 || email.length() > 150 || !email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            return ResponseEntity.badRequest().body("Enter a valid name and email address.");
+        }
+        if (message.length() > 2000) {
+            return ResponseEntity.badRequest().body("Message is too long (2,000 characters at most).");
+        }
+        String phone = trim(body.get("phone"));
+        if (phone != null && phone.length() > 30) {
+            return ResponseEntity.badRequest().body("Phone number is too long.");
         }
 
         ContactMessage contactMessage = new ContactMessage();

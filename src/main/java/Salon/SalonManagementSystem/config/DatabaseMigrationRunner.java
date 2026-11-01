@@ -62,21 +62,39 @@ public class DatabaseMigrationRunner {
     private final BranchRepository branchRepository;
     private final SalonServiceRepository salonServiceRepository;
     private final PasswordEncoder passwordEncoder;
+    private final boolean resetDefaultPasswords;
+    private final Salon.SalonManagementSystem.repository.CustomerRepository customerRepository;
 
     public DatabaseMigrationRunner(
             RoleRepository roleRepository,
             UsersRepository usersRepository,
             BranchRepository branchRepository,
             SalonServiceRepository salonServiceRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            Salon.SalonManagementSystem.repository.CustomerRepository customerRepository,
+            @org.springframework.beans.factory.annotation.Value("${salon.reset-default-passwords:false}") boolean resetDefaultPasswords) {
         this.roleRepository = roleRepository;
         this.usersRepository = usersRepository;
         this.branchRepository = branchRepository;
         this.salonServiceRepository = salonServiceRepository;
         this.passwordEncoder = passwordEncoder;
+        this.customerRepository = customerRepository;
+        this.resetDefaultPasswords = resetDefaultPasswords;
+    }
+
+    // Phone numbers are stored as digits only, so the same number can't be registered twice in different formats.
+    private void normalizeCustomerPhones() {
+        customerRepository.findAll().forEach(c -> {
+            String digits = c.getPhone() == null ? null : c.getPhone().replaceAll("[\\s-]", "");
+            if (digits != null && !digits.equals(c.getPhone()) && customerRepository.findByPhone(digits).isEmpty()) {
+                c.setPhone(digits);
+                customerRepository.save(c);
+            }
+        });
     }
 
     public void runMigrations() {
+        normalizeCustomerPhones();
         migrateLegacyCashierRole();
         syncMainBranchDetails();
         backfillServiceCategories();
@@ -108,10 +126,12 @@ public class DatabaseMigrationRunner {
                 changed = true;
             }
 
-            if (user.getPassword() == null || !passwordEncoder.matches(plainPassword, user.getPassword())) {
+            // Passwords are only set here if missing, or when SALON_RESET_DEFAULT_PASSWORDS=true is set on purpose.
+            // They are no longer reset on every start, so a changed password stays changed.
+            if (user.getPassword() == null || (resetDefaultPasswords && !passwordEncoder.matches(plainPassword, user.getPassword()))) {
                 user.setPassword(passwordEncoder.encode(plainPassword));
                 changed = true;
-                System.out.println("MIGRATION: reset BCrypt password for user '" + username + "'");
+                System.out.println("MIGRATION: set default password for user '" + username + "'");
             }
 
             if (changed) {

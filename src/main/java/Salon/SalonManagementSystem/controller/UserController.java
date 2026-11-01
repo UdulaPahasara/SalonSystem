@@ -13,17 +13,25 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private Salon.SalonManagementSystem.security.TokenService tokenService;
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginData) {
         if (loginData.getUsername() == null || loginData.getUsername().isBlank()
                 || loginData.getPassword() == null || loginData.getPassword().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Username and password are required."));
+        }
+
+        long locked = userService.lockedForSeconds(loginData.getUsername().trim());
+        if (locked > 0) {
+            return ResponseEntity.status(429).body(Map.of("message",
+                    "Too many failed attempts. Try again in " + ((locked + 59) / 60) + " minute(s)."));
         }
 
         Users loggedIn = userService.authenticate(
@@ -36,7 +44,9 @@ public class UserController {
         }
 
         LoginUserDto response = userService.toLoginDto(loggedIn);
-        return ResponseEntity.ok(wrapLoginResponse(response));
+        Map<String, Object> body = wrapLoginResponse(response);
+        body.put("token", tokenService.issue(loggedIn));
+        return ResponseEntity.ok(body);
     }
 
     private Map<String, Object> wrapLoginResponse(LoginUserDto dto) {

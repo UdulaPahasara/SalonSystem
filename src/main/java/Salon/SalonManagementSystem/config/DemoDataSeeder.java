@@ -154,7 +154,7 @@ public class DemoDataSeeder {
         for (int i = 0; i < names.length; i++) {
             Customer c = new Customer();
             c.setFullName(names[i]);
-            c.setPhone(String.format("077 %03d %04d", 100 + i, 2000 + i * 13));
+            c.setPhone(String.format("077%03d%04d", 100 + i, 2000 + i * 13));
             c.setEmail(names[i].toLowerCase().replace(' ', '.') + DEMO_DOMAIN);
             boolean member = i % 2 == 0;
             c.setLoyaltyMember(member);

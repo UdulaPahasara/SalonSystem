@@ -48,3 +48,22 @@ export function inPeriod(dateTime, sel) {
   const [start, end] = periodRange(s);
   return (!start || d >= start) && (!end || d <= end);
 }
+
+export const isoLocal = (d) => `${dateKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+/** The startDate/endDate query for a chosen period (nothing for "All time"). */
+export function periodQuery(sel) {
+  const [start, end] = periodRange(sel);
+  const q = {};
+  if (start) q.startDate = isoLocal(start);
+  if (end) q.endDate = isoLocal(end);
+  return q;
+}
+
+/** Enough recent sales for a dashboard: this month plus the last week, never the whole history. */
+export function recentRange() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 8);
+  return { startDate: isoLocal(monthStart < weekAgo ? monthStart : weekAgo) };
+}

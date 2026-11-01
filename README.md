@@ -159,6 +159,14 @@ Cashier → **Point of Sale**: add services and products, pick a customer (or wa
 - `POST /salon-app/api/transactions/checkout` recalculates the bill from database prices (client totals are never trusted), saves each line's price at time of sale, and deducts product stock from the branch. Any error (e.g. not enough stock) rolls back the whole sale.
 - Products appear in the POS only after stock exists for the branch (Product Manager requests → Branch Manager approves).
 
+### Sign-in, security and loyalty
+
+- Every API call except the public website (branches, services, contact form) needs a signed-in staff token. Tokens last 12 hours (`APP_TOKEN_HOURS`); after that the app sends the user back to the login page.
+- Managers, Reception and Cashiers only see and change data for their own branch. After 5 wrong passwords an account is locked for 10 minutes.
+- Before going live, set `APP_SECRET` to a long random string. Other settings (`APP_CORS_ORIGINS`, `APP_TIMEZONE`, `SALON_RESET_DEFAULT_PASSWORDS`, `SALON_LOYALTY_RS_PER_POINT`) are listed in `.env.example`.
+- Changed passwords are kept across restarts. If your database was created before this change and still has old default passwords, start once with `SALON_RESET_DEFAULT_PASSWORDS=true`.
+- Loyalty: tick the loyalty box when booking to enrol a customer. Members earn 1 point per Rs. 100 spent at checkout (points cannot be redeemed yet).
+
 ## Development
 
 From the **project root** (no need to `cd frontend`):
