@@ -3,6 +3,7 @@ import { getAllAppointments } from "../api/appointmentApi";
 import { getBranches } from "../api/branchApi";
 import { useAuth } from "../context/AuthContext";
 import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
 import { PERIODS, inPeriod, downloadCsv } from "../utils/format";
 import "../components/DashboardLayout.css";
@@ -10,7 +11,6 @@ import "../styles/Dashboard.css";
 import "../styles/StaffPages.css";
 
 const STATUSES = ["All", "Booked", "Completed", "Cancelled"];
-const PAGE = 25;
 
 export default function AppointmentHistory() {
   const { userRole, branchId: ownBranchId } = useAuth();
@@ -21,7 +21,6 @@ export default function AppointmentHistory() {
   const [status, setStatus] = useState("All");
   const [period, setPeriod] = useState("all");
   const [query, setQuery] = useState("");
-  const [shown, setShown] = useState(PAGE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -52,7 +51,7 @@ export default function AppointmentHistory() {
     });
   }, [appointments, period, status, query]);
 
-  useEffect(() => setShown(PAGE), [period, status, query, branchId]);
+  const { page, setPage, pageItems, total } = usePagination(rows, [period, status, query, branchId].join("|"));
 
   const count = (s) => appointments.filter((a) => (a.status || "BOOKED").toUpperCase() === s).length;
   const kpis = [
@@ -147,7 +146,7 @@ export default function AppointmentHistory() {
                 </tr>
               </thead>
               <tbody>
-                {rows.slice(0, shown).map((a) => {
+                {pageItems.map((a) => {
                   const st = (a.status || "BOOKED").toUpperCase();
                   return (
                     <tr key={a.appointmentId}>
@@ -167,12 +166,7 @@ export default function AppointmentHistory() {
               </tbody>
             </table>
           </div>
-          {rows.length > shown && (
-            <p className="table-more">
-              Showing {shown} of {rows.length}.{" "}
-              <button className="link-btn" onClick={() => setShown(shown + PAGE)}>Show more</button>
-            </p>
-          )}
+          <Pagination page={page} total={total} onPage={setPage} />
         </>
       )}
     </div>

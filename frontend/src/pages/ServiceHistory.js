@@ -3,13 +3,12 @@ import { getAllTransactions, getTransactionsByBranch } from "../api/usersApi";
 import { getBranches } from "../api/branchApi";
 import { useAuth } from "../context/AuthContext";
 import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
 import { rs, PERIODS, inPeriod, downloadCsv } from "../utils/format";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
 import "../styles/StaffPages.css";
-
-const PAGE = 25;
 
 // A "service performed" is a service line on a completed checkout.
 function toServiceRows(transactions) {
@@ -41,7 +40,6 @@ export default function ServiceHistory() {
   const [category, setCategory] = useState("All");
   const [period, setPeriod] = useState("all");
   const [query, setQuery] = useState("");
-  const [shown, setShown] = useState(PAGE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -71,7 +69,7 @@ export default function ServiceHistory() {
     );
   }, [rowsAll, period, category, query]);
 
-  useEffect(() => setShown(PAGE), [period, category, query, branchId]);
+  const { page, setPage, pageItems, total } = usePagination(rows, [period, category, query, branchId].join("|"));
 
   const performed = rows.reduce((s, r) => s + r.qty, 0);
   const revenue = rows.reduce((s, r) => s + r.revenue, 0);
@@ -174,7 +172,7 @@ export default function ServiceHistory() {
                 </tr>
               </thead>
               <tbody>
-                {rows.slice(0, shown).map((r) => (
+                {pageItems.map((r) => (
                   <tr key={r.key}>
                     <td>
                       {new Date(r.date).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
@@ -194,12 +192,7 @@ export default function ServiceHistory() {
               </tbody>
             </table>
           </div>
-          {rows.length > shown && (
-            <p className="table-more">
-              Showing {shown} of {rows.length}.{" "}
-              <button className="link-btn" onClick={() => setShown(shown + PAGE)}>Show more</button>
-            </p>
-          )}
+          <Pagination page={page} total={total} onPage={setPage} />
         </>
       )}
     </div>
