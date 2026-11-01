@@ -43,14 +43,20 @@ public class ReportController {
     // Get Top Selling Products
     @GetMapping("/top-products")
     // @PreAuthorize("hasAnyRole('Owner', 'Branch Manager')")
-    public ResponseEntity<List<TopItemDTO>> getTopProducts(@RequestParam(required = false) Integer branchId) {
-        return ResponseEntity.ok(reportService.getTopProducts(branchId));
+    public ResponseEntity<List<TopItemDTO>> getTopProducts(
+            @RequestParam(required = false) Integer branchId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        return ResponseEntity.ok(reportService.getTopProducts(branchId, startDate, endDate));
     }
 
     // Get Top Selling Services
     @GetMapping("/top-services")
     // @PreAuthorize("hasAnyRole('Owner', 'Branch Manager')")
-    public ResponseEntity<List<TopItemDTO>> getTopServices(@RequestParam(required = false) Integer branchId) {
-        return ResponseEntity.ok(reportService.getTopServices(branchId));
+    public ResponseEntity<List<TopItemDTO>> getTopServices(
+            @RequestParam(required = false) Integer branchId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        return ResponseEntity.ok(reportService.getTopServices(branchId, startDate, endDate));
     }
 }

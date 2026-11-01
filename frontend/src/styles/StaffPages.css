@@ -1,0 +1,105 @@
+/* Shared styles for staff list pages (Salary, Billing, Branch Inventory) */
+.staff-kpis { margin-bottom: 1.5rem; }
+.staff-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.staff-table th.num { text-align: right; }
+.cell-sub { display: block; margin-top: 0.1rem; color: #806774; font-size: 0.82rem; }
+
+.staff-filter-bar .staff-search { min-width: 330px; }
+.cell-sub a, .msg-cell a { color: #a91a58; text-decoration: none; }
+.cell-sub a:hover { text-decoration: underline; }
+.staff-filter-group { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.staff-field-inline { display: flex; align-items: center; gap: 0.5rem; color: #735c66; font-size: 0.88rem; font-weight: 600; }
+.staff-field-inline .staff-input { min-width: 0; width: auto; }
+
+.status-badge.ok { background: #dcfce7; color: #166534; }
+.status-badge.low { background: #fef3c7; color: #92400e; }
+.status-badge.out { background: #ffe4e6; color: #9f1239; }
+.status-badge.method { background: #f5e9ed; color: #71113d; }
+.status-badge.loyalty { background: #fdf3dc; color: #7a5410; margin-left: 0.4rem; }
+
+.row-detail td { background: #fbf7f3; padding: 0.9rem 1.25rem 1.1rem; }
+.row-detail-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.35rem; max-width: 520px; }
+.row-detail-list li { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9rem; }
+.row-detail-list li span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+.link-btn { padding: 0; border: 0; background: none; color: #a91a58; font: inherit; font-weight: 600; cursor: pointer; }
+.link-btn:hover { color: #71113d; text-decoration: underline; }
+
+.staff-table.nowrap-table td { white-space: nowrap; }
+.table-scroll { width: 100%; overflow-x: auto; }
+.table-more { margin: 0.9rem 0 0; color: #806774; font-size: 0.88rem; text-align: center; }
+.dash-kpi-value-sm { font-size: 1.35rem; overflow-wrap: anywhere; }
+
+/* Pagination */
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; margin-top: 1rem; }
+.pager-info { margin: 0; color: #806774; font-size: 0.88rem; }
+.pager-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.pager-btn { min-width: 2.25rem; height: 2.25rem; padding: 0 0.75rem; border: 1px solid #d8c9c0; border-radius: 7px; background: #fffdf9; color: #71113d; font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+.pager-btn:hover:not(:disabled) { background: #f5e9ed; }
+.pager-btn.active { background: #53112f; border-color: #53112f; color: #fff; }
+.pager-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.pager-gap { padding: 0 0.2rem; color: #806774; }
+
+/* Dialog form helpers */
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+.form-check { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; color: #53112f; font-weight: 500; cursor: pointer; }
+@media (max-width: 480px) { .form-row-2 { grid-template-columns: 1fr; } }
+.msg-cell { max-width: 460px; white-space: pre-wrap; line-height: 1.45; }
+
+/* Reports */
+.report-period { margin: 0 0 1rem; color: #735c66; font-size: 0.9rem; font-weight: 600; }
+.report-custom { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; margin: -0.5rem 0 1rem; }
+.report-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin-top: 1.25rem; align-items: start; }
+.report-note { margin: 1.25rem 0 0; color: #806774; font-size: 0.82rem; }
+.rank-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.95rem; }
+.rank-row { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr) auto; gap: 0.25rem 0.75rem; align-items: baseline; }
+.rank-row-flat { grid-template-columns: minmax(0, 1fr) auto; }
+.rank-n { color: #806774; font-variant-numeric: tabular-nums; }
+.rank-name { font-weight: 600; color: #3a0a22; overflow-wrap: anywhere; }
+.rank-val { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank-meta { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.7rem; color: #806774; font-size: 0.82rem; }
+.rank-row:not(.rank-row-flat) .rank-meta { grid-column: 2 / -1; }
+.rank-bar { flex: 0 0 38%; height: 6px; border-radius: 3px; background: #f0e8e2; overflow: hidden; }
+.rank-bar i { display: block; height: 100%; border-radius: 3px; background: #a91a58; }
+@media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
+
+/* Timeframe filter */
+.period-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; }
+.period-filter .staff-input { width: auto; }
+
+/* Payroll register */
+.register-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; margin-top: 1.5rem; }
+.register-head .staff-section-title { margin: 0; }
+.register-table th, .register-table td { padding-left: 0.7rem; padding-right: 0.7rem; }
+.register-table .sticky-col { position: sticky; left: 0; z-index: 1; background: #fffdf9; box-shadow: 1px 0 0 #e8ddd5; min-width: 190px; text-align: left; }
+.register-head .staff-search { width: auto; flex: 0 1 340px; }
+.register-table thead .sticky-col { background: #f2ebe7; }
+.register-table tfoot td { border-top: 2px solid #e2d7cf; background: #faf6f3; padding: 0.85rem 1rem; }
+.register-table tfoot .sticky-col { background: #faf6f3; }
+.reg-paid { color: #166534; font-weight: 600; }
+.reg-unpaid { padding: 0.15rem 0.55rem; border: 1px solid #f3d9a4; border-radius: 999px; background: #fef3c7; color: #92400e; font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+.reg-unpaid:hover { background: #fde8a8; }
+.tab-bar { display: flex; gap: 0.25rem; margin: 0 0 1.25rem; border-bottom: 1px solid #e2d7cf; }
+.tab-btn { padding: 0.7rem 1.1rem; border: 0; border-bottom: 3px solid transparent; background: none; color: #735c66; font: inherit; font-weight: 600; cursor: pointer; margin-bottom: -1px; }
+.tab-btn:hover { color: #71113d; }
+.tab-btn.active { color: #53112f; border-bottom-color: #a91a58; }
+.month-nav { display: inline-flex; align-items: center; gap: 0.4rem; }
+.month-nav .staff-input { width: auto; }
+.icon-btn { width: 2.5rem; height: 2.5rem; border: 1px solid #d8c9c0; border-radius: 7px; background: #fffdf9; color: #71113d; font-size: 1.1rem; cursor: pointer; }
+.icon-btn:hover:not(:disabled) { background: #f5e9ed; }
+
+/* Export dialog */
+.export-dialog { max-width: 560px; }
+.export-group { margin: 0 0 1rem; padding: 0; border: 0; }
+.export-group legend { margin-bottom: 0.4rem; padding: 0; color: #53112f; font-size: 0.88rem; font-weight: 600; }
+.export-formats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.export-format { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.75rem 0.85rem; border: 1px solid #d8c9c0; border-radius: 8px; background: #fffdf9; cursor: pointer; }
+.export-format.selected { border-color: #a91a58; background: #fbf3f5; box-shadow: 0 0 0 2px rgba(169, 26, 88, 0.12); }
+.export-format span { display: grid; gap: 0.1rem; }
+.export-format small { color: #806774; font-size: 0.8rem; }
+.export-summary { margin: -0.25rem 0 1rem; color: #735c66; font-size: 0.85rem; }
+.export-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem; }
+.form-check.disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 520px) { .export-formats, .export-sections { grid-template-columns: 1fr; } }
+
+/* Point of sale: checking out a booked visit */
+.pos-banner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; padding: 0.85rem 1.1rem; border: 1px solid #e6c9a0; border-radius: 8px; background: #fdf6e8; color: #53112f; }

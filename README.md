@@ -49,13 +49,43 @@ cp .env.example .env   # then edit DB_USERNAME / DB_PASSWORD
 
 | Username | Password | Role |
 |----------|----------|------|
-| admin | admin | Owner |
-| manager | manager | Branch Manager |
-| reception | reception | Reception |
-| pm | pm | Product Manager |
-| cashier | cashier | Cashier |
+| admin | Malroo@123 | Owner |
+| manager | Malroo@123 | Branch Manager |
+| reception | Malroo@123 | Reception |
+| pm | Malroo@123 | Product Manager |
+| cashier | Malroo@123 | Cashier |
 
 See **ARCHITECTURE.txt** section 11 for full database & credentials details.
+
+### Demo data (for the whole team)
+
+Demo data is not stored in git. Each person fills their **own local database** by starting the app once with the demo switch. It adds a second branch, staff, 18 customers, products and stock, stock requests, about 100 sales over the last 60 days, 38 appointments, salary history and website messages, all dated relative to today.
+
+**First-time setup for a teammate**
+
+```bash
+git fetch && git checkout Anushka && git pull   # the branch that has the full system
+cp .env.example .env                              # then set DB_PASSWORD if your MySQL has one
+npm install
+npm run dev:demo                                  # starts API + website and seeds the demo data once
+```
+
+Open **http://localhost:3000/salon-app/** and sign in. Every demo account uses the same password, `Malroo@123`:
+
+| Username | Role |
+|----------|------|
+| `admin` | Owner |
+| `manager` | Branch Manager |
+| `reception` | Reception |
+| `cashier` | Cashier |
+| `pm` | Product Manager |
+| `cashier2` | Cashier (demo Kandy branch) |
+
+From then on use the normal `npm run dev:all`. The seeder skips itself if demo customers (`@example.com`) already exist, so running `dev:demo` again is harmless.
+
+**Start over with fresh demo data:** in MySQL run `DROP DATABASE SalonMangement;`, then `npm run dev:demo` again.
+
+Backend only: `npm run start:api:demo`. Windows users: run these in Git Bash (the scripts use `sh`).
 
 ### Build
 

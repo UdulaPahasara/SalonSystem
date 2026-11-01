@@ -1,377 +1,220 @@
-import React, { useEffect, useState } from "react";
-import {
-  getProducts,
-  getProductsByManager,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getInventoryByProduct,
-  getInventoryByProductAndManager
-} from "../api/productApi";
-import { createStockRequest } from "../api/stockRequestApi";
-import { useAuth } from "../context/AuthContext";  // Import AuthContext
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { getProducts, createProduct, updateProduct, deleteProduct, getInventoryByBranch } from "../api/productApi";
+import { getBranches } from "../api/branchApi";
+import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
+import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
+import { getStaffHomePath } from "../utils/staffNav";
+import { rs } from "../utils/format";
+import "../components/DashboardLayout.css";
+import "../styles/Dashboard.css";
+import "../styles/StaffPages.css";
+
+const EMPTY = { productName: "", brand: "", unitPrice: "", lowStockLimit: "5" };
+const errorText = (err, fallback) => (typeof err.response?.data === "string" && err.response.data ? err.response.data : fallback);
 
 export default function ProductManagementPage() {
-  
-  /* -------------------- AUTH CONTEXT -------------------- */
-  const { user, userId, userRole } = useAuth();
+  const { userRole } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
-
-  /* -------------------- STATE -------------------- */
-
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
-  const [inventory, setInventory] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [editingId, setEditingId] = useState(null);
+  const [stock, setStock] = useState({}); // productId -> { total, lowBranches }
   const [loading, setLoading] = useState(true);
+  const [brand, setBrand] = useState("All");
+  const [query, setQuery] = useState("");
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(EMPTY);
+  const [saving, setSaving] = useState(false);
 
-  // per-branch requested quantities
-  const [requestQty, setRequestQty] = useState({});
-
-  const [form, setForm] = useState({
-    product_name: "",
-    brand: "",
-    unit_price: "",
-    low_stock_limit: ""
-  });
-
-  /* -------------------- LOAD PRODUCTS -------------------- */
-
-  useEffect(() => {
-    if (userId && userRole) {
-      loadProducts();
-    }
-  }, [userId, userRole]);
-
-  const loadProducts = async () => {
+  const load = async () => {
     try {
-      setLoading(true);
-      let data;
-      
-      // If Product Manager, filter by their assigned branches
-      if (userRole === "Product Manager") {
-        console.log("Loading products for Product Manager, userId:", userId);
-        data = await getProductsByManager(userId);
-      } else {
-        // Owner/Admin sees all products
-        console.log("Loading all products for", userRole);
-        data = await getProducts();
-      }
-      
-      setProducts(data);
-      console.log("Loaded products:", data.length);
-    } catch (error) {
-      console.error("Error loading products:", error);
-      toast.error("Failed to load products");
+      const [list, branches] = await Promise.all([getProducts(), getBranches().catch(() => [])]);
+      setProducts(list);
+      const lines = (await Promise.all(branches.map((b) => getInventoryByBranch(b.id).catch(() => [])))).flat();
+      const map = {};
+      lines.forEach((l) => {
+        const cur = map[l.productId] || { total: 0, low: 0 };
+        cur.total += Number(l.quantity || 0);
+        if (l.quantity < 5) cur.low += 1;
+        map[l.productId] = cur;
+      });
+      setStock(map);
+    } catch (err) {
+      toast.error("Couldn't load products.");
     } finally {
       setLoading(false);
     }
   };
 
-  /* -------------------- PRODUCT CRUD -------------------- */
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const submitProduct = async (e) => {
+  const openDialog = (p = null) => {
+    setEditing(p);
+    setForm(p ? { productName: p.productName, brand: p.brand || "", unitPrice: String(p.unitPrice), lowStockLimit: String(p.lowStockLimit ?? 5) } : EMPTY);
+    setDialog(true);
+  };
+
+  // Dashboard "Add a product" opens the dialog straight away (?new=1)
+  useEffect(() => {
+    if (searchParams.get("new")) {
+      openDialog();
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const brands = useMemo(() => ["All", ...new Set(products.map((p) => p.brand).filter(Boolean))], [products]);
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return products
+      .filter((p) => (brand === "All" || p.brand === brand) && (!q || [p.productName, p.brand].some((v) => (v || "").toLowerCase().includes(q))))
+      .sort((a, b) => a.productName.localeCompare(b.productName));
+  }, [products, brand, query]);
+  const { page, setPage, pageItems, total } = usePagination(rows, `${brand}|${query}`);
+
+  const save = async (e) => {
     e.preventDefault();
-
-    const payload = {
-      productName: form.product_name,
-      brand: form.brand,
-      unitPrice: parseFloat(form.unit_price),
-      lowStockLimit: parseInt(form.low_stock_limit)
-    };
-
+    const payload = { productName: form.productName.trim(), brand: form.brand.trim(), unitPrice: parseFloat(form.unitPrice), lowStockLimit: parseInt(form.lowStockLimit, 10) };
+    setSaving(true);
     try {
-      if (editingId) {
-        await updateProduct(editingId, payload);
-        toast.success("Product updated successfully!");
-      } else {
-        await createProduct(payload);
-        toast.success("Product created successfully!");
-      }
-
-      resetForm();
-      loadProducts();
-    } catch (error) {
-      console.error("Error saving product:", error);
-      toast.error("Failed to save product");
+      if (editing) await updateProduct(editing.productId, payload);
+      else await createProduct(payload);
+      toast.success(editing ? "Product updated." : "Product added.");
+      setDialog(false);
+      load();
+    } catch (err) {
+      toast.error(errorText(err, "Couldn't save the product."));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const resetForm = () => {
-    setEditingId(null);
-    setForm({
-      product_name: "",
-      brand: "",
-      unit_price: "",
-      low_stock_limit: ""
-    });
-  };
-
-  const editProduct = (p) => {
-    setEditingId(p.productId);
-    setForm({
-      product_name: p.productName,
-      brand: p.brand,
-      unit_price: p.unitPrice,
-      low_stock_limit: p.lowStockLimit
-    });
-  };
-
-  const removeProduct = async (id) => {
-    const ok = await confirm("Delete product?", { title: "Delete product", danger: true, confirmLabel: "Delete" });
+  const remove = async (p) => {
+    const ok = await confirm(`Delete ${p.productName}? Its stock records at every branch will be removed too.`, { title: "Delete product", danger: true, confirmLabel: "Delete" });
     if (!ok) return;
     try {
-      await deleteProduct(id);
-      toast.success("Product deleted successfully!");
-      loadProducts();
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      toast.error("Failed to delete product");
+      await deleteProduct(p.productId);
+      toast.success("Product deleted.");
+      load();
+    } catch (err) {
+      toast.error(errorText(err, "Couldn't delete the product."));
     }
   };
 
-  /* -------------------- INVENTORY -------------------- */
-
-  const viewInventory = async (product) => {
-    setSelectedProduct(product);
-    
-    try {
-      let data;
-      
-      // If Product Manager, filter inventory by their branches
-      if (userRole === "Product Manager") {
-        console.log("Loading inventory for Product Manager, productId:", product.productId, "userId:", userId);
-        data = await getInventoryByProductAndManager(product.productId, userId);
-      } else {
-        // Owner/Admin sees all branches
-        console.log("Loading all inventory for productId:", product.productId);
-        data = await getInventoryByProduct(product.productId);
-      }
-      
-      setInventory(data);
-      console.log("Loaded inventory:", data.length, "records");
-    } catch (error) {
-      console.error("Error loading inventory:", error);
-      toast.error("Failed to load inventory");
-    }
-  };
-
-  /* -------------------- STOCK REQUEST -------------------- */
-
-  const sendStockRequest = async (branchId) => {
-    if (!requestQty[branchId] || requestQty[branchId] <= 0) {
-      toast.error("Please enter a valid quantity");
-      return;
-    }
-
-    try {
-      await createStockRequest({
-        productId: selectedProduct.productId,
-        branchId: branchId,
-        requestedQuantity: parseInt(requestQty[branchId]),
-        requestedBy: userId // Use logged-in user ID from AuthContext
-      });
-
-      toast.success("Stock request sent successfully!");
-      setRequestQty(prev => ({ ...prev, [branchId]: "" }));
-    } catch (error) {
-      console.error("Error sending stock request:", error);
-      toast.error("Failed to send stock request. Please try again.");
-    }
-  };
-
-  /* -------------------- UI -------------------- */
-
-  if (loading) {
-    return <div style={{ padding: 20 }}>Loading...</div>;
-  }
+  const value = products.reduce((s, p) => s + Number(p.unitPrice || 0) * (stock[p.productId]?.total || 0), 0);
+  const kpis = [
+    { label: "Products", value: products.length, hint: "In the catalogue" },
+    { label: "Brands", value: new Set(products.map((p) => p.brand).filter(Boolean)).size, hint: "Suppliers and labels" },
+    { label: "Units in stock", value: Object.values(stock).reduce((s, x) => s + x.total, 0).toLocaleString(), hint: "Across all branches" },
+    { label: "Stock value", value: rs(Math.round(value)), hint: "At unit price" },
+  ];
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Product Management</h2>
-      
-      {/* Show role indicator */}
-      <div style={{ 
-        backgroundColor: '#f0f0f0', 
-        padding: '10px', 
-        marginBottom: '20px',
-        borderRadius: '5px'
-      }}>
-        <p style={{ margin: 0 }}>
-          <strong>Logged in as:</strong> {user?.fullName || user?.username} 
-          <span style={{ marginLeft: '10px', color: '#666' }}>({userRole})</span>
-        </p>
-        {userRole === "Product Manager" && (
-          <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '14px' }}>
-            📦 Showing products for your assigned branches only
-          </p>
-        )}
+    <div className="staff-page">
+      <PageHeader
+        title="Products"
+        subtitle="The catalogue sold and used across all branches."
+        backTo={getStaffHomePath(userRole)}
+        actions={<button className="staff-btn staff-btn-primary" onClick={() => openDialog()}>+ Add Product</button>}
+      />
+
+      <section className="dash-kpis staff-kpis" aria-label="Catalogue summary">
+        {kpis.map((k) => (
+          <article key={k.label} className="dash-kpi">
+            <p className="dash-kpi-label">{k.label}</p>
+            <p className="dash-kpi-value">{loading ? "…" : k.value}</p>
+            <p className="dash-kpi-hint">{k.hint}</p>
+          </article>
+        ))}
+      </section>
+
+      <div className="staff-filter-bar">
+        <div className="staff-chips" role="group" aria-label="Filter by brand">
+          {brands.map((b) => (
+            <button key={b} type="button" className={`staff-chip${brand === b ? " active" : ""}`} aria-pressed={brand === b} onClick={() => setBrand(b)}>{b}</button>
+          ))}
+        </div>
+        <input className="staff-input staff-search" type="search" placeholder="Search products" aria-label="Search products" value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
 
-      {/* ---------- PRODUCT FORM ---------- */}
-      <form onSubmit={submitProduct} style={{ marginBottom: 20 }}>
-        <input
-          placeholder="Product Name"
-          value={form.product_name}
-          onChange={e => setForm({ ...form, product_name: e.target.value })}
-          required
-          style={{ marginRight: 10, padding: 5 }}
-        />
+      {loading ? (
+        <p>Loading products...</p>
+      ) : products.length === 0 ? (
+        <div className="staff-empty-state">
+          <h3>No products yet</h3>
+          <p>Add your first product, then request stock for the branches that sell it.</p>
+          <button className="staff-btn staff-btn-primary" onClick={() => openDialog()}>+ Add Product</button>
+        </div>
+      ) : (
+        <>
+          <div className="table-scroll">
+            <table className="staff-table nowrap-table">
+              <thead>
+                <tr><th>Product</th><th className="num">Unit price</th><th className="num">Total in stock</th><th>Stock level</th><th className="staff-th-right">Actions</th></tr>
+              </thead>
+              <tbody>
+                {pageItems.map((p) => {
+                  const s = stock[p.productId] || { total: 0, low: 0 };
+                  const state = s.total === 0 ? "out" : s.low > 0 ? "low" : "ok";
+                  return (
+                    <tr key={p.productId}>
+                      <td><span className="staff-cell-strong">{p.productName}</span>{p.brand && <span className="cell-sub">{p.brand}</span>}</td>
+                      <td className="num">{rs(p.unitPrice)}</td>
+                      <td className="num">{s.total}</td>
+                      <td><span className={`status-badge ${state}`}>{state === "ok" ? "Healthy" : state === "low" ? `${s.low} branch${s.low === 1 ? "" : "es"} low` : "Not stocked"}</span></td>
+                      <td className="staff-row-actions">
+                        <Link className="dashboard-btn-primary" style={{ textDecoration: "none" }} to={`/pm/inventory?product=${p.productId}`}>Request stock</Link>
+                        <button className="dashboard-btn-edit" onClick={() => openDialog(p)}>Edit</button>
+                        <button className="dashboard-btn-delete" onClick={() => remove(p)}>Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {rows.length === 0 && <tr className="empty-row"><td colSpan="5">No products match your filters.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} total={total} onPage={setPage} />
+        </>
+      )}
 
-        <input
-          placeholder="Brand"
-          value={form.brand}
-          onChange={e => setForm({ ...form, brand: e.target.value })}
-          required
-          style={{ marginRight: 10, padding: 5 }}
-        />
-
-        <input
-          type="number"
-          step="0.01"
-          placeholder="Unit Price"
-          value={form.unit_price}
-          onChange={e => setForm({ ...form, unit_price: e.target.value })}
-          required
-          style={{ marginRight: 10, padding: 5 }}
-        />
-
-        <input
-          type="number"
-          placeholder="Low Stock Limit"
-          value={form.low_stock_limit}
-          onChange={e => setForm({ ...form, low_stock_limit: e.target.value })}
-          required
-          style={{ marginRight: 10, padding: 5 }}
-        />
-
-        <button type="submit" style={{ padding: 5, marginRight: 5 }}>
-          {editingId ? "Update" : "Add"} Product
-        </button>
-
-        {editingId && (
-          <button type="button" onClick={resetForm} style={{ padding: 5 }}>
-            Cancel
-          </button>
-        )}
-      </form>
-
-      {/* ---------- PRODUCT TABLE ---------- */}
-      <table border="1" width="100%" style={{ marginTop: 20, borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f0f0f0' }}>
-            <th style={{ padding: 10 }}>ID</th>
-            <th style={{ padding: 10 }}>Name</th>
-            <th style={{ padding: 10 }}>Brand</th>
-            <th style={{ padding: 10 }}>Price</th>
-            <th style={{ padding: 10 }}>Low Stock</th>
-            <th style={{ padding: 10 }}>Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {products.length === 0 ? (
-            <tr>
-              <td colSpan="6" style={{ textAlign: 'center', padding: 20, color: '#666' }}>
-                {userRole === "Product Manager" 
-                  ? "No products found in your assigned branches" 
-                  : "No products found"}
-              </td>
-            </tr>
-          ) : (
-            products.map(p => (
-              <tr key={p.productId}>
-                <td style={{ padding: 10 }}>{p.productId}</td>
-                <td style={{ padding: 10 }}>{p.productName}</td>
-                <td style={{ padding: 10 }}>{p.brand}</td>
-                <td style={{ padding: 10 }}>${p.unitPrice}</td>
-                <td style={{ padding: 10 }}>{p.lowStockLimit}</td>
-                <td style={{ padding: 10 }}>
-                  <button 
-                    onClick={() => editProduct(p)}
-                    style={{ marginRight: 5, padding: '3px 10px' }}
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    onClick={() => removeProduct(p.productId)}
-                    style={{ marginRight: 5, padding: '3px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: 3, cursor: 'pointer' }}
-                  >
-                    Delete
-                  </button>
-                  <button 
-                    onClick={() => viewInventory(p)}
-                    style={{ padding: '3px 10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: 3, cursor: 'pointer' }}
-                  >
-                    Inventory
-                  </button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-
-      {/* ---------- INVENTORY TABLE ---------- */}
-      {selectedProduct && (
-        <div style={{ marginTop: 30 }}>
-          <h3>Inventory for: {selectedProduct.productName}</h3>
-          {userRole === "Product Manager" && (
-            <p style={{ color: '#666', fontSize: '14px' }}>
-              Showing only branches you manage
-            </p>
-          )}
-
-          <table border="1" width="60%" style={{ borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f0f0f0' }}>
-                <th style={{ padding: 10 }}>Branch</th>
-                <th style={{ padding: 10 }}>Quantity</th>
-                <th style={{ padding: 10 }}>Request Stock</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {inventory.length === 0 ? (
-                <tr>
-                  <td colSpan="3" style={{ textAlign: 'center', padding: 20, color: '#666' }}>
-                    No inventory found
-                  </td>
-                </tr>
-              ) : (
-                inventory.map(i => (
-                  <tr key={i.inventoryId}>
-                    <td style={{ padding: 10 }}>{i.branchName}</td>
-                    <td style={{ padding: 10 }}>{i.quantity}</td>
-                    <td style={{ padding: 10 }}>
-                      <input
-                        type="number"
-                        min="1"
-                        value={requestQty[i.branchId] || ""}
-                        onChange={e =>
-                          setRequestQty({
-                            ...requestQty,
-                            [i.branchId]: e.target.value
-                          })
-                        }
-                        placeholder="Qty"
-                        style={{ width: 60, marginRight: 10, padding: 5 }}
-                      />
-                      <button 
-                        onClick={() => sendStockRequest(i.branchId)}
-                        style={{ padding: '5px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: 3, cursor: 'pointer' }}
-                      >
-                        Request
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {dialog && (
+        <div className="modal-overlay" onClick={() => setDialog(false)}>
+          <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="prod-title" onClick={(e) => e.stopPropagation()}>
+            <h3 id="prod-title">{editing ? "Edit product" : "Add product"}</h3>
+            <form onSubmit={save}>
+              <div className="form-group">
+                <label htmlFor="prod-name">Product name</label>
+                <input id="prod-name" className="staff-input" value={form.productName} onChange={(e) => setForm({ ...form, productName: e.target.value })} autoFocus required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="prod-brand">Brand</label>
+                <input id="prod-brand" className="staff-input" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} required />
+              </div>
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label htmlFor="prod-price">Unit price (Rs.)</label>
+                  <input id="prod-price" type="number" min="1" step="0.01" className="staff-input" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="prod-low">Low-stock limit</label>
+                  <input id="prod-low" type="number" min="0" className="staff-input" value={form.lowStockLimit} onChange={(e) => setForm({ ...form, lowStockLimit: e.target.value })} required />
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="staff-btn staff-btn-secondary" onClick={() => setDialog(false)}>Cancel</button>
+                <button type="submit" className="staff-btn staff-btn-primary" disabled={saving}>{saving ? "Saving…" : editing ? "Save changes" : "Add product"}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

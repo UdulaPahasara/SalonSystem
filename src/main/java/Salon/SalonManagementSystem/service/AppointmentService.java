@@ -71,6 +71,22 @@ public class AppointmentService {
         return appointmentRepository.save(appt);
     }
 
+    // BOOKED -> COMPLETED or CANCELLED. Finished visits keep their history instead of being deleted.
+    public Appointment changeStatus(Integer id, String status) {
+        Appointment appt = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        String next = status == null ? "" : status.toUpperCase();
+        if (!next.equals("COMPLETED") && !next.equals("CANCELLED")) {
+            throw new RuntimeException("Status must be COMPLETED or CANCELLED");
+        }
+        String current = appt.getStatus() == null ? "BOOKED" : appt.getStatus();
+        if (!current.equals("BOOKED")) {
+            throw new RuntimeException("This appointment is already " + current.toLowerCase());
+        }
+        appt.setStatus(next);
+        return appointmentRepository.save(appt);
+    }
+
     public void deleteAppointment(Integer id) {
         appointmentRepository.deleteById(id);
     }

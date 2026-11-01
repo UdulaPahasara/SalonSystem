@@ -29,6 +29,7 @@ function groupByCategory(services) {
 export default function ServicesPage() {
   const [grouped, setGrouped] = useState({});
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState("");
 
   useEffect(() => {
     getAllServices()
@@ -48,10 +49,28 @@ export default function ServicesPage() {
         <p>Browse our women's salon services by category. Prices shown in LKR (Rs.).</p>
       </section>
 
+      {!loading && (
+        <div className="service-filter" role="group" aria-label="Filter by category">
+          {["", ...Object.keys(grouped)].map((category) => (
+            <button
+              key={category || "all"}
+              type="button"
+              className={`service-filter-btn${activeCategory === category ? " active" : ""}`}
+              aria-pressed={activeCategory === category}
+              onClick={() => setActiveCategory(category)}
+            >
+              {category || "All"}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <p className="public-loading">Loading services...</p>
       ) : (
-        Object.entries(grouped).map(([category, items]) => (
+        Object.entries(grouped)
+          .filter(([category]) => !activeCategory || category === activeCategory)
+          .map(([category, items]) => (
           <section key={category} className="service-category-block">
             <h3 className="service-category-title">{category}</h3>
             <div className="service-price-grid">

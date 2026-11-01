@@ -22,6 +22,7 @@ public class TransactionService {
     private final SalonServiceRepository serviceRepo;
     private final ProductRepository productRepo;
     private final BranchInventoryRepository inventoryRepo;
+    private final AppointmentRepository appointmentRepo;
 
     public TransactionService(
             TransactionRepository transactionRepo,
@@ -30,7 +31,8 @@ public class TransactionService {
             CustomerRepository customerRepo,
             SalonServiceRepository serviceRepo,
             ProductRepository productRepo,
-            BranchInventoryRepository inventoryRepo) {
+            BranchInventoryRepository inventoryRepo,
+            AppointmentRepository appointmentRepo) {
         this.transactionRepo = transactionRepo;
         this.branchRepo = branchRepo;
         this.usersRepo = usersRepo;
@@ -38,6 +40,7 @@ public class TransactionService {
         this.serviceRepo = serviceRepo;
         this.productRepo = productRepo;
         this.inventoryRepo = inventoryRepo;
+        this.appointmentRepo = appointmentRepo;
     }
 
     // Prices come from the database, never from the client; product stock is deducted.
@@ -110,6 +113,17 @@ public class TransactionService {
         }
 
         tx.setTotalAmount(total);
-        return transactionRepo.save(tx);
+        Transaction saved = transactionRepo.save(tx);
+
+        // Paying for a booked visit completes it.
+        if (req.getAppointmentId() != null) {
+            appointmentRepo.findById(req.getAppointmentId()).ifPresent(a -> {
+                if ("BOOKED".equals(a.getStatus())) {
+                    a.setStatus("COMPLETED");
+                    appointmentRepo.save(a);
+                }
+            });
+        }
+        return saved;
     }
 }

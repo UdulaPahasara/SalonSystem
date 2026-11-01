@@ -1,125 +1,240 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
 import { getStaffSalaryStatus, paySalary, updateBaseSalary } from "../api/usersApi";
+import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
+import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
+import { getStaffHomePath } from "../utils/staffNav";
+import { rs } from "../utils/format";
+import SalaryHistory from "../components/staff/SalaryHistory";
 import "../components/DashboardLayout.css";
+import "../styles/Dashboard.css";
+import "../styles/StaffPages.css";
+
+const FILTERS = ["All", "Unpaid", "Paid"];
+const pad = (n) => String(n).padStart(2, "0");
+const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const shiftMonth = (m, n) => { const [y, mo] = m.split("-").map(Number); const d = new Date(y, mo - 1 + n, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
 
 export default function SalaryManagement() {
-  const navigate = useNavigate();
+  const { userRole } = useAuth();
   const toast = useToast();
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const confirm = useConfirm();
+  const [tab, setTab] = useState("payroll");
+  const [month, setMonth] = useState(currentMonth());
   const [staff, setStaff] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [filter, setFilter] = useState("All");
+  const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [newSalary, setNewSalary] = useState("");
+
+  const monthLabel = new Date(`${month}-01T00:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  const load = () => {
+    setLoading(true);
+    setError(false);
+    return getStaffSalaryStatus(month)
+      .then(setStaff)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    loadStaff();
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month]);
 
-  const loadStaff = async () => {
-    setLoading(true);
-    try {
-      const data = await getStaffSalaryStatus(month);
-      setStaff(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const totals = useMemo(() => {
+    const payroll = staff.reduce((s, m) => s + Number(m.baseSalary || 0), 0);
+    const paid = staff.filter((m) => m.isPaid).reduce((s, m) => s + Number(m.baseSalary || 0), 0);
+    return { payroll, paid, outstanding: payroll - paid, paidCount: staff.filter((m) => m.isPaid).length };
+  }, [staff]);
+
+  const rows = staff.filter((m) => {
+    if (filter === "Paid" && !m.isPaid) return false;
+    if (filter === "Unpaid" && m.isPaid) return false;
+    const q = query.trim().toLowerCase();
+    return !q || [m.name, m.role, m.branch].some((v) => (v || "").toLowerCase().includes(q));
+  });
+
+  const { page, setPage, pageItems, total: rowCount } = usePagination(rows, `${filter}|${query}|${month}`);
 
   const handlePay = async (member) => {
-    const amount = member.baseSalary || 0;
+    const ok = await confirm(`Pay ${rs(member.baseSalary)} to ${member.name} for ${monthLabel}?`, {
+      title: "Confirm salary payment",
+      confirmLabel: "Pay",
+    });
+    if (!ok) return;
     try {
-      await paySalary({
-        type: member.type,
-        id: member.id,
-        amount,
-        month,
-      });
-      toast.success("Salary marked as paid.");
-      loadStaff();
+      await paySalary({ type: member.type, id: member.id, amount: member.baseSalary, month });
+      toast.success(`Paid ${member.name} for ${monthLabel}.`);
+      load();
     } catch (err) {
-      toast.error("Failed to record payment.");
+      const msg = err.response?.data;
+      toast.error(typeof msg === "string" && msg ? msg : "Failed to record payment.");
+      load();
     }
   };
 
-  const handleSalaryUpdate = async (member) => {
-    const newSalary = window.prompt("Enter new base salary:", member.baseSalary || 0);
-    if (newSalary === null) return;
+  const openEditor = (member) => {
+    setEditing(member);
+    setNewSalary(member.baseSalary || "");
+  };
+
+  const saveSalary = async (e) => {
+    e.preventDefault();
+    const value = parseFloat(newSalary);
+    if (Number.isNaN(value) || value < 0) {
+      toast.error("Enter a valid salary amount (0 or more).");
+      return;
+    }
     try {
-      await updateBaseSalary({
-        type: member.type,
-        id: member.id,
-        baseSalary: parseFloat(newSalary),
-      });
-      loadStaff();
+      await updateBaseSalary({ type: editing.type, id: editing.id, baseSalary: value });
+      toast.success("Base salary updated.");
+      setEditing(null);
+      load();
     } catch (err) {
       toast.error("Failed to update salary.");
     }
   };
 
-  return (
-    <div className="dashboard-container">
-      <div className="dashboard-content">
-        <div className="dashboard-content-header">
-          <h2>Salary Management</h2>
-          <button className="dashboard-btn-secondary" onClick={() => navigate("/admin-dashboard")}>
-            ← Back to Dashboard
-          </button>
-        </div>
+  const kpis = [
+    { label: "Monthly payroll", value: rs(totals.payroll), hint: `${staff.length} staff` },
+    { label: "Paid", value: rs(totals.paid), hint: `${totals.paidCount} of ${staff.length} paid` },
+    { label: "Outstanding", value: rs(totals.outstanding), hint: `For ${monthLabel}` },
+  ];
 
-        <div className="dashboard-form" style={{ maxWidth: "300px", marginBottom: "20px" }}>
-          <label>Payment Month</label>
+  return (
+    <div className="staff-page">
+      <PageHeader
+        title="Salary"
+        subtitle="Set base salaries and record monthly payments."
+        backTo={getStaffHomePath(userRole)}
+      />
+
+      <div className="tab-bar" role="tablist" aria-label="Salary views">
+        <button role="tab" aria-selected={tab === "payroll"} className={`tab-btn${tab === "payroll" ? " active" : ""}`} onClick={() => setTab("payroll")}>Monthly payroll</button>
+        <button role="tab" aria-selected={tab === "history"} className={`tab-btn${tab === "history" ? " active" : ""}`} onClick={() => setTab("history")}>Payment history</button>
+      </div>
+
+      {tab === "history" ? (
+        <SalaryHistory onOpenMonth={(m) => { setMonth(m); setTab("payroll"); }} />
+      ) : (
+      <>
+      <section className="dash-kpis staff-kpis" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }} aria-label="Payroll summary">
+        {kpis.map((k) => (
+          <article key={k.label} className="dash-kpi">
+            <p className="dash-kpi-label">{k.label}</p>
+            <p className="dash-kpi-value">{loading ? "…" : k.value}</p>
+            <p className="dash-kpi-hint">{k.hint}</p>
+          </article>
+        ))}
+      </section>
+
+      <div className="staff-filter-bar">
+        <div className="staff-filter-group">
+          <div className="staff-chips" role="group" aria-label="Filter by payment status">
+            {FILTERS.map((f) => (
+              <button key={f} type="button" className={`staff-chip${filter === f ? " active" : ""}`} aria-pressed={filter === f} onClick={() => setFilter(f)}>
+                {f}
+              </button>
+            ))}
+          </div>
           <input
-            type="month"
-            className="dashboard-input"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
+            className="staff-input staff-search"
+            type="search"
+            placeholder="Search name, role or branch"
+            aria-label="Search staff"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <table className="dashboard-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Role</th>
-                <th>Branch</th>
-                <th>Base Salary</th>
-                <th>Paid</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {staff.map((member) => (
-                <tr key={`${member.type}-${member.id}`}>
-                  <td>{member.name}</td>
-                  <td>{member.role}</td>
-                  <td>{member.branch}</td>
-                  <td>Rs. {member.baseSalary || 0}</td>
-                  <td>{member.isPaid ? "Yes" : "No"}</td>
-                  <td>
-                    {!member.isPaid && (
-                      <button className="dashboard-btn-primary" onClick={() => handlePay(member)}>
-                        Pay
-                      </button>
-                    )}
-                    <button
-                      className="dashboard-btn-edit"
-                      style={{ marginLeft: 8 }}
-                      onClick={() => handleSalaryUpdate(member)}
-                    >
-                      Edit Salary
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <div className="month-nav" role="group" aria-label="Payroll month">
+          <button type="button" className="icon-btn" aria-label="Previous month" onClick={() => setMonth(shiftMonth(month, -1))}>‹</button>
+          <input id="salary-month" type="month" className="staff-input" aria-label="Month" value={month} max={currentMonth()} onChange={(e) => e.target.value && setMonth(e.target.value)} />
+          <button type="button" className="icon-btn" aria-label="Next month" disabled={month >= currentMonth()} onClick={() => setMonth(shiftMonth(month, 1))}>›</button>
+          {month !== currentMonth() && (
+            <button type="button" className="link-btn" onClick={() => setMonth(currentMonth())}>This month</button>
+          )}
+        </div>
       </div>
+
+      {loading ? (
+        <p>Loading staff...</p>
+      ) : error ? (
+        <div className="staff-empty-state">
+          <h3>Couldn't load salary data</h3>
+          <p>Check that the server is running and try again.</p>
+        </div>
+      ) : (
+        <table className="staff-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Branch</th>
+              <th className="num">Base salary</th>
+              <th>Status</th>
+              <th className="staff-th-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageItems.map((m) => (
+              <tr key={`${m.type}-${m.id}`}>
+                <td className="staff-cell-strong">{m.name}</td>
+                <td><span className="role-badge">{m.role}</span></td>
+                <td>{m.branch || <span className="staff-cell-muted">Head Office</span>}</td>
+                <td className="num">{m.baseSalary ? rs(m.baseSalary) : <span className="staff-cell-muted">Not set</span>}</td>
+                <td>
+                  <span className={`status-badge ${m.isPaid ? "paid" : "pending"}`}>{m.isPaid ? "Paid" : "Unpaid"}</span>
+                </td>
+                <td className="staff-row-actions">
+                  {!m.isPaid && (
+                    <button
+                      className="dashboard-btn-primary"
+                      disabled={!m.baseSalary}
+                      title={m.baseSalary ? undefined : "Set a base salary first"}
+                      onClick={() => handlePay(m)}
+                    >
+                      Pay
+                    </button>
+                  )}
+                  <button className="dashboard-btn-edit" onClick={() => openEditor(m)}>
+                    {m.baseSalary ? "Edit salary" : "Set salary"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr className="empty-row"><td colSpan="6">No staff match your filters.</td></tr>
+            )}
+          </tbody>
+        </table>
+      )}
+      {!loading && !error && <Pagination page={page} total={rowCount} onPage={setPage} />}
+      </>
+      )}
+
+      {editing && (
+        <div className="modal-overlay" onClick={() => setEditing(null)}>
+          <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="salary-dialog-title" onClick={(e) => e.stopPropagation()}>
+            <h3 id="salary-dialog-title">Base salary</h3>
+            <form onSubmit={saveSalary}>
+              <div className="form-group">
+                <label htmlFor="base-salary">{editing.name} — monthly base salary (Rs.)</label>
+                <input id="base-salary" type="number" min="0" step="0.01" className="staff-input" value={newSalary} onChange={(e) => setNewSalary(e.target.value)} autoFocus required />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="staff-btn staff-btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
+                <button type="submit" className="staff-btn staff-btn-primary">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

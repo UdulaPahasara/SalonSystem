@@ -26,6 +26,14 @@ public class SalaryPaymentController {
         return salaryService.getAllStaffWithSalaryStatus(month);
     }
 
+    @GetMapping("/payments")
+    public List<Map<String, Object>> getPayments(
+            @RequestParam String fromMonth,
+            @RequestParam String toMonth,
+            @RequestParam(required = false) Integer branchId) {
+        return salaryService.getPaymentHistory(fromMonth, toMonth, branchId);
+    }
+
     @PostMapping("/pay")
     public ResponseEntity<?> paySalary(@RequestBody Map<String, Object> payload) {
         try {

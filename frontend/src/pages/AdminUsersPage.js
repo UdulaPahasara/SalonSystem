@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   getUsers,
   getRoles,
@@ -11,11 +12,22 @@ import { getBranches } from "../api/branchApi";
 import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
 import { getRoleDisplayName } from "../utils/authRoutes";
-import "./AdminUserPage.css";
+import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
+import { useAuth } from "../context/AuthContext";
+import { getStaffHomePath } from "../utils/staffNav";
+import "../components/DashboardLayout.css";
+
+const errorMessage = (err, fallback) => {
+  const data = err.response?.data;
+  return typeof data === "string" && data.trim() ? data : fallback;
+};
 
 export default function AdminUsersPage() {
   const toast = useToast();
   const confirm = useConfirm();
+  const { userId, userRole } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -115,6 +127,15 @@ export default function AdminUsersPage() {
     setIsModalOpen(true);
   };
 
+  // Dashboard "Add staff user" opens the form directly via ?new=1
+  useEffect(() => {
+    if (searchParams.get("new")) {
+      openModal();
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingUser(null);
@@ -128,8 +149,7 @@ export default function AdminUsersPage() {
       toast.success("User deleted.");
       loadUsers();
     } catch (err) {
-      const msg = err.response?.data || err.message;
-      toast.error("Operation failed: " + msg);
+      toast.error(errorMessage(err, "Could not delete this user."));
     }
   };
 
@@ -154,127 +174,133 @@ export default function AdminUsersPage() {
       closeModal();
       loadUsers();
     } catch (err) {
-      toast.error("Operation failed: " + err.message);
+      toast.error(errorMessage(err, "Could not save this user. The username may already be taken."));
     }
   };
 
-  /* ---------------- RENDER HELPERS ---------------- */
-  // Get unique roles for sidebar from the loaded roles list (or could be unique roles from user list)
-  // Using the actual Role entities for the filter list is cleaner
-  // Get unique roles for sidebar
-  const roleNames = ['All', ...new Set(roles.map(r => r.roleName || r.name || r.role_name || 'Unknown'))];
+  /* ---------------- RENDER ---------------- */
+  const visibleUsers = users.filter(
+    (u) => selectedRole === "All" || getRoleDisplayName(u.roleName) === selectedRole
+  );
+
+  const { page, setPage, pageItems } = usePagination(visibleUsers, `${selectedRole}|${selectedBranchId}`);
 
   return (
-    <div className="adminusers-container">
-      {/* SIDEBAR */}
-      <div className="admin-sidebar">
-        <div className="sidebar-header">Users</div>
-        <button
-          className={`sidebar-btn ${selectedRole === 'All' ? 'active' : ''}`}
-          onClick={() => setSelectedRole('All')}
-        >
-          👥 All Users
-        </button>
-        {roles.map(r => (
-          <button
-            key={r.id || r.roleName}
-            className={`sidebar-btn ${selectedRole === r.roleName ? 'active' : ''}`}
-            onClick={() => setSelectedRole(r.roleName)}
-          >
-            👤 {r.roleName}
+    <div className="staff-page">
+      <PageHeader
+        title="Users"
+        subtitle="Create staff accounts and assign roles and branches."
+        backTo={getStaffHomePath(userRole)}
+        actions={
+          <button className="staff-btn staff-btn-primary" onClick={() => openModal()}>
+            + Add User
           </button>
-        ))}
-      </div>
+        }
+      />
 
-      {/* CONTENT */}
-      <div className="admin-content">
-        <div className="content-header">
-          <h2>{selectedRole === 'All' ? 'All Users' : `${selectedRole}s`}</h2>
-
-          <div className="header-actions">
-            <select
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(e.target.value)}
-              style={{ padding: '8px', borderRadius: '4px' }}
+      <div className="staff-filter-bar">
+        <div className="staff-chips" role="group" aria-label="Filter by role">
+          {["All", ...roles.map((r) => r.roleName)].map((name) => (
+            <button
+              key={name}
+              type="button"
+              className={`staff-chip${selectedRole === name ? " active" : ""}`}
+              aria-pressed={selectedRole === name}
+              onClick={() => setSelectedRole(name)}
             >
-              <option value="">All Branches</option>
-              {branches.map(b => (
-                <option key={b.id} value={b.id}>{b.branchName}</option>
-              ))}
-            </select>
-
-            <button className="btn-add-user" onClick={() => openModal()}>
-              + Add User
+              {name}
             </button>
-          </div>
+          ))}
         </div>
-
-        <div className="users-grid">
-          {users
-            .filter(u => selectedRole === 'All' || getRoleDisplayName(u.roleName) === selectedRole || u.roleName === selectedRole)
-            .map(u => (
-              <div key={u.id} className="user-card">
-                <div className="card-header">
-                  <div style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{u.fullName || u.username}</div>
-                  <span className="role-badge">{getRoleDisplayName(u.roleName)}</span>
-                </div>
-                <div className="card-details">
-                  <p><strong>Username:</strong> {u.username}</p>
-                  <p><strong>Branch:</strong> {u.branchName || ""}</p>
-                </div>
-
-                <div className="card-actions">
-                  <button className="action-btn btn-edit" onClick={() => openModal(u)}>Edit</button>
-                  <button className="action-btn btn-delete" onClick={() => handleDelete(u.id)}>Delete</button>
-                </div>
-              </div>
-            ))}
-          {users.length === 0 && <p>No users found.</p>}
-        </div>
+        <select
+          className="staff-input"
+          aria-label="Filter by branch"
+          value={selectedBranchId}
+          onChange={(e) => setSelectedBranchId(e.target.value)}
+        >
+          <option value="">All Branches</option>
+          {branches.map((b) => (
+            <option key={b.id} value={b.id}>{b.branchName}</option>
+          ))}
+        </select>
       </div>
 
-      {/* MODAL */}
+      <p className="staff-table-meta">
+        Showing {visibleUsers.length} {visibleUsers.length === 1 ? "user" : "users"}
+      </p>
+
+      <table className="staff-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Branch</th>
+            <th className="staff-th-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pageItems.map((u) => (
+            <tr key={u.id}>
+              <td className="staff-cell-strong">{u.fullName || u.username}</td>
+              <td className="staff-cell-muted">{u.username}</td>
+              <td><span className="role-badge">{getRoleDisplayName(u.roleName)}</span></td>
+              <td className={u.branchName ? undefined : "staff-cell-muted"}>{u.branchName || "Head Office"}</td>
+              <td className="staff-row-actions">
+                <button className="dashboard-btn-edit" onClick={() => openModal(u)}>Edit</button>
+                {u.id !== userId && (
+                  <button className="dashboard-btn-delete" onClick={() => handleDelete(u.id)}>Delete</button>
+                )}
+              </td>
+            </tr>
+          ))}
+          {visibleUsers.length === 0 && (
+            <tr className="empty-row"><td colSpan="5">No users found.</td></tr>
+          )}
+        </tbody>
+      </table>
+
+      <Pagination page={page} total={visibleUsers.length} onPage={setPage} />
+
       {isModalOpen && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <h3>{editingUser ? "Edit User" : "Create New User"}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Username</label>
-                <input className="form-input" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} required />
+                <label htmlFor="user-username">Username</label>
+                <input id="user-username" className="staff-input" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
               </div>
               <div className="form-group">
-                <label>Password {editingUser && "(Leave blank to keep same)"}</label>
-                <input className="form-input" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required={!editingUser} />
+                <label htmlFor="user-password">Password {editingUser && "(leave blank to keep current)"}</label>
+                <input id="user-password" className="staff-input" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editingUser} />
               </div>
               <div className="form-group">
-                <label>Full Name</label>
-                <input className="form-input" value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} />
+                <label htmlFor="user-fullname">Full Name</label>
+                <input id="user-fullname" className="staff-input" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
               </div>
               <div className="form-group">
-                <label>Role</label>
-                <select className="form-input" value={form.roleId} onChange={e => setForm({ ...form, roleId: e.target.value })} required>
-                  <option value="">Select Role</option>
-                  {roles.map(r => <option key={r.id} value={r.id}>{r.roleName}</option>)}
+                <label htmlFor="user-role">Role</label>
+                <select id="user-role" className="staff-input" value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })} required>
+                  <option value="">Select role</option>
+                  {roles.map((r) => <option key={r.id} value={r.id}>{r.roleName}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label>Branch</label>
-                <select className="form-input" value={form.branchId} onChange={e => setForm({ ...form, branchId: e.target.value })}>
-                  <option value="">No Branch (Head Office)</option>
-                  {branches.map(b => <option key={b.id} value={b.id}>{b.branchName}</option>)}
+                <label htmlFor="user-branch">Branch</label>
+                <select id="user-branch" className="staff-input" value={form.branchId} onChange={(e) => setForm({ ...form, branchId: e.target.value })}>
+                  <option value="">No branch (Head Office)</option>
+                  {branches.map((b) => <option key={b.id} value={b.id}>{b.branchName}</option>)}
                 </select>
               </div>
-
               <div className="modal-actions">
-                <button type="button" onClick={closeModal}>Cancel</button>
-                <button type="submit" className="btn-add-user">Save</button>
+                <button type="button" className="staff-btn staff-btn-secondary" onClick={closeModal}>Cancel</button>
+                <button type="submit" className="staff-btn staff-btn-primary">Save</button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 }

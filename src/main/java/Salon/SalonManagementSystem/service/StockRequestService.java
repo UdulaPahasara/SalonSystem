@@ -52,6 +52,7 @@ public class StockRequestService {
     public StockRequest approve(Integer id) {
         StockRequest request = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Stock request not found"));
+        requirePending(request);
 
         System.out.println("Approving Stock Request ID: " + id + " for Product: "
                 + request.getProduct().getProductName() + " Branch: " + request.getBranch().getBranchName());
@@ -87,9 +88,17 @@ public class StockRequestService {
     public StockRequest reject(Integer id) {
         StockRequest request = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Stock request not found"));
+        requirePending(request);
 
         request.setStatus("REJECTED");
         return repo.save(request);
+    }
+
+    // A request can only be decided once; approving twice would add the stock twice.
+    private void requirePending(StockRequest request) {
+        if (!"PENDING".equals(request.getStatus())) {
+            throw new RuntimeException("This request was already " + request.getStatus().toLowerCase());
+        }
     }
 
     public List<StockRequest> getAll() {

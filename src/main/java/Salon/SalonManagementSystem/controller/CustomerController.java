@@ -69,7 +69,14 @@ public class CustomerController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCustomer(@PathVariable Integer id) {
-        customerService.deleteCustomer(id);
-        return ResponseEntity.ok().build();
+        try {
+            customerService.deleteCustomer(id);
+            return ResponseEntity.ok().build();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.status(409)
+                    .body("This customer has appointments or purchases on record and can't be deleted.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lato:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
 
 .login-page {
   min-height: 100vh;
@@ -48,6 +48,8 @@
 }
 
 .login-visual-overlay h2 {
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(42, 7, 24, 0.55);
   margin: 0 0 0.75rem;
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(2rem, 4vw, 3rem);
@@ -304,4 +306,32 @@
     padding: 1.5rem 1.25rem;
     border-radius: 20px;
   }
+}
+
+/* Malroo 2026 login */
+.login-page { font-family: 'DM Sans', sans-serif; color: #2b1a22; background: #fffaf4; }
+.login-visual { background: #2a0718; }
+.login-visual-image { object-position: center; }
+.login-visual-overlay { background: rgba(42, 7, 24, 0.62); }
+.login-visual-tag { color: #e8b75f; letter-spacing: 0.18em; }
+.login-main { background: #fffaf4; }
+.login-card { max-width: 460px; padding: 2.4rem; border: 1px solid #e2d7cf; border-radius: 10px; background: #fffdf9; box-shadow: 0 22px 60px rgba(58,10,34,0.1); }
+.login-back-link { color: #71113d; }
+.login-brand-icon { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #c99a4a; border-radius: 50%; color: #71113d; font-family: 'Cormorant Garamond', serif; font-weight: 700; }
+.login-brand-tag { color: #a91a58; }
+.login-brand h1 { color: #3a0a22; font-size: 2.55rem; }
+.login-lead { color: #735c66; }
+.login-field label { color: #53112f; }
+.login-input-shell { border-color: #d8c9c0; border-radius: 8px; box-shadow: none; }
+.login-input-shell:focus-within { border-color: #a91a58; box-shadow: 0 0 0 4px rgba(169,26,88,0.11); }
+.login-input-icon { color: #a91a58; }
+.login-input { color: #2b1a22; }
+.login-input::placeholder { color: #a78d99; }
+.login-password-toggle { border-radius: 7px; background: #f5e9ed; color: #861145; }
+.login-submit { border-radius: 999px; background: #a91a58; box-shadow: 0 10px 24px rgba(169,26,88,0.2); }
+.login-submit:hover:not(:disabled) { background: #861145; box-shadow: 0 14px 28px rgba(169,26,88,0.24); }
+.login-help { color: #735c66; }
+
+@media (max-width: 900px) {
+  .login-card { padding: 1.6rem; border-radius: 10px; }
 }

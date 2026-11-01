@@ -1,216 +1,170 @@
-import React, { useEffect, useState } from "react";
-import {
-  getStockRequestsByBranch,
-  approveStockRequest,
-  rejectStockRequest
-} from "../api/stockRequestApi";
-import { useAuth } from "../context/AuthContext";  // Import AuthContext
+import React, { useEffect, useMemo, useState } from "react";
+import { getStockRequestsByBranch, approveStockRequest, rejectStockRequest } from "../api/stockRequestApi";
+import { getInventoryByBranch } from "../api/productApi";
+import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
+import PageHeader from "../components/staff/PageHeader";
+import PeriodFilter from "../components/staff/PeriodFilter";
+import Pagination, { usePagination } from "../components/staff/Pagination";
+import { getStaffHomePath } from "../utils/staffNav";
+import { DEFAULT_PERIOD, inPeriod, periodKey } from "../utils/period";
+import "../components/DashboardLayout.css";
+import "../styles/Dashboard.css";
+import "../styles/StaffPages.css";
+
+const STATUSES = ["Pending", "Approved", "Rejected", "All"];
+const errorText = (err, fallback) => (typeof err.response?.data === "string" && err.response.data ? err.response.data : fallback);
 
 export default function BranchManagerStockApproval() {
-  
-  /* -------------------- AUTH CONTEXT -------------------- */
-  const { user, branchId, userRole } = useAuth();
+  const { branchId, userRole } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
-
-  /* -------------------- STATE -------------------- */
   const [requests, setRequests] = useState([]);
+  const [stock, setStock] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(false);
+  const [status, setStatus] = useState("Pending");
+  const [period, setPeriod] = useState(DEFAULT_PERIOD);
+  const [query, setQuery] = useState("");
+  const [busy, setBusy] = useState(null);
 
-  /* -------------------- LOAD STOCK REQUESTS -------------------- */
-
-  useEffect(() => {
-    if (branchId) {
-      loadRequests();
-    } else if (!loading) {
-      setError("No branch assigned to your account");
-    }
-  }, [branchId]);
-
-  const loadRequests = async () => {
+  const load = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      console.log("Loading stock requests for branchId:", branchId);
-      const res = await getStockRequestsByBranch(branchId);
-      setRequests(res.data);
-      console.log("Loaded stock requests:", res.data.length);
-    } catch (error) {
-      console.error("Error loading stock requests:", error);
-      setError("Failed to load stock requests");
+      const [res, inv] = await Promise.all([getStockRequestsByBranch(branchId), getInventoryByBranch(branchId).catch(() => [])]);
+      setRequests([...res.data].sort((a, b) => (b.requestId || 0) - (a.requestId || 0)));
+      setStock(Object.fromEntries(inv.map((i) => [i.productId, i.quantity])));
+      setError(false);
+    } catch (err) {
+      setError(true);
     } finally {
       setLoading(false);
     }
   };
 
-  /* -------------------- APPROVE/REJECT -------------------- */
+  useEffect(() => {
+    if (branchId) load();
+    else setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branchId]);
 
-  const approve = async (id) => {
-    const ok = await confirm("Approve this stock request?", { title: "Approve stock request" });
+  const count = (s) => requests.filter((r) => r.status === s).length;
+  const pendingUnits = requests.filter((r) => r.status === "PENDING").reduce((s, r) => s + Number(r.requestedQuantity || 0), 0);
+
+  // open on the Pending tab, but fall back to All when there is nothing to review
+  useEffect(() => {
+    if (!loading && status === "Pending" && requests.length > 0 && count("PENDING") === 0) setStatus("All");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return requests.filter((r) => {
+      if (status !== "All" && (r.status || "").toUpperCase() !== status.toUpperCase()) return false;
+      if (period.period !== "all" && !(r.createdAt && inPeriod(r.createdAt, period))) return false;
+      return !q || [r.product?.productName, r.product?.brand, r.requestedBy?.fullName].some((v) => (v || "").toLowerCase().includes(q));
+    });
+  }, [requests, status, period, query]);
+  const { page, setPage, pageItems, total } = usePagination(rows, [status, periodKey(period), query].join("|"));
+
+  const decide = async (r, approve) => {
+    const have = stock[r.product?.productId] || 0;
+    const ok = await confirm(
+      approve
+        ? `Add ${r.requestedQuantity} × ${r.product?.productName} to your stock? You have ${have} now, so you'll have ${have + r.requestedQuantity}.`
+        : `Reject the request for ${r.requestedQuantity} × ${r.product?.productName}?`,
+      approve ? { title: "Approve stock request", confirmLabel: "Approve" } : { title: "Reject stock request", danger: true, confirmLabel: "Reject" }
+    );
     if (!ok) return;
+    setBusy(r.requestId);
     try {
-      await approveStockRequest(id);
-      toast.success("Stock request approved!");
-      loadRequests();
-    } catch (error) {
-      console.error("Error approving request:", error);
-      toast.error("Failed to approve stock request");
+      await (approve ? approveStockRequest(r.requestId) : rejectStockRequest(r.requestId));
+      toast.success(approve ? "Approved. Stock added to your branch." : "Request rejected.");
+    } catch (err) {
+      toast.error(errorText(err, "Couldn't update the request."));
+    } finally {
+      setBusy(null);
+      load();
     }
   };
 
-  const reject = async (id) => {
-    const ok = await confirm("Reject this stock request?", { title: "Reject stock request", danger: true, confirmLabel: "Reject" });
-    if (!ok) return;
-    try {
-      await rejectStockRequest(id);
-      toast.success("Stock request rejected!");
-      loadRequests();
-    } catch (error) {
-      console.error("Error rejecting request:", error);
-      toast.error("Failed to reject stock request");
-    }
-  };
-
-  /* -------------------- STATUS BADGE -------------------- */
-
-  const getStatusBadge = (status) => {
-    const colors = {
-      PENDING: '#FFA500',
-      APPROVED: '#28A745',
-      REJECTED: '#DC3545'
-    };
-
-    return (
-      <span style={{
-        backgroundColor: colors[status] || '#6C757D',
-        color: 'white',
-        padding: '4px 12px',
-        borderRadius: '12px',
-        fontSize: '12px',
-        fontWeight: 'bold'
-      }}>
-        {status}
-      </span>
-    );
-  };
-
-  /* -------------------- UI -------------------- */
-
-  if (loading) {
-    return <div className="admin-dashboard-container" style={{ padding: 20 }}>Loading stock requests...</div>;
-  }
-
-  if (error || !branchId) {
-    return (
-      <div className="admin-dashboard-container" style={{ padding: 20 }}>
-        <h1 className="admin-dashboard-title">Stock Requests Approval</h1>
-        <div style={{ 
-          backgroundColor: '#f8d7da', 
-          color: '#721c24', 
-          padding: 15, 
-          borderRadius: 5,
-          marginTop: 20
-        }}>
-          <strong>Error:</strong> {error || "No branch assigned to your account. Please contact administrator."}
-        </div>
-      </div>
-    );
-  }
+  const kpis = [
+    { label: "Pending", value: count("PENDING"), hint: "Waiting for your decision" },
+    { label: "Units pending", value: pendingUnits, hint: "If all are approved" },
+    { label: "Approved", value: count("APPROVED"), hint: "Added to stock" },
+    { label: "Rejected", value: count("REJECTED"), hint: "Declined" },
+  ];
 
   return (
-    <div className="admin-dashboard-container" style={{ padding: 20 }}>
-      <h1 className="admin-dashboard-title">Stock Requests Approval</h1>
-      
-      {/* User info banner */}
-      <div style={{ 
-        backgroundColor: '#f0f0f0', 
-        padding: '10px', 
-        marginBottom: '20px',
-        borderRadius: '5px'
-      }}>
-        <p style={{ margin: 0 }}>
-          <strong>Logged in as:</strong> {user?.fullName || user?.username} 
-          <span style={{ marginLeft: '10px', color: '#666' }}>({userRole})</span>
-        </p>
-        <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '14px' }}>
-          📋 Managing stock requests for your branch only
-        </p>
+    <div className="staff-page">
+      <PageHeader title="Stock Requests" subtitle="Approve or reject product requests for your branch." backTo={getStaffHomePath(userRole)} />
+
+      <section className="dash-kpis staff-kpis" aria-label="Request summary">
+        {kpis.map((k) => (
+          <article key={k.label} className="dash-kpi">
+            <p className="dash-kpi-label">{k.label}</p>
+            <p className="dash-kpi-value">{loading ? "…" : k.value}</p>
+            <p className="dash-kpi-hint">{k.hint}</p>
+          </article>
+        ))}
+      </section>
+
+      <div className="staff-filter-bar">
+        <div className="staff-filter-group">
+          <div className="staff-chips" role="group" aria-label="Filter by status">
+            {STATUSES.map((s) => (
+              <button key={s} type="button" className={`staff-chip${status === s ? " active" : ""}`} aria-pressed={status === s} onClick={() => setStatus(s)}>{s}</button>
+            ))}
+          </div>
+          <input className="staff-input staff-search" type="search" placeholder="Search product or brand" aria-label="Search requests" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </div>
+        <PeriodFilter value={period} onChange={setPeriod} />
       </div>
 
-      {requests.length === 0 ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: 40, 
-          backgroundColor: '#f8f9fa',
-          borderRadius: 5,
-          color: '#666'
-        }}>
-          <p style={{ fontSize: 18 }}>No stock requests found for your branch</p>
-        </div>
+      {!branchId ? (
+        <div className="staff-empty-state"><h3>No branch assigned</h3><p>Ask the owner to assign your account to a branch.</p></div>
+      ) : loading ? (
+        <p>Loading stock requests...</p>
+      ) : error ? (
+        <div className="staff-empty-state"><h3>Couldn't load stock requests</h3><p>Check that the server is running and try again.</p></div>
       ) : (
-        <table className="adminusers-table" border="1" width="100%" style={{ borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f0f0f0' }}>
-              <th style={{ padding: 10 }}>ID</th>
-              <th style={{ padding: 10 }}>Product</th>
-              <th style={{ padding: 10 }}>Brand</th>
-              <th style={{ padding: 10 }}>Requested Qty</th>
-              <th style={{ padding: 10 }}>Requested By</th>
-              <th style={{ padding: 10 }}>Status</th>
-              <th style={{ padding: 10 }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {requests.map((r) => (
-              <tr key={r.requestId}>
-                <td style={{ padding: 10 }}>{r.requestId}</td>
-                <td style={{ padding: 10 }}>{r.product?.productName || 'N/A'}</td>
-                <td style={{ padding: 10 }}>{r.product?.brand || 'N/A'}</td>
-                <td style={{ padding: 10 }}>{r.requestedQuantity}</td>
-                <td style={{ padding: 10 }}>{r.requestedBy?.fullName || r.requestedBy?.username || 'N/A'}</td>
-                <td style={{ padding: 10, textAlign: 'center' }}>{getStatusBadge(r.status)}</td>
-                <td style={{ padding: 10 }}>
-                  {r.status === 'PENDING' ? (
-                    <>
-                      <button 
-                        onClick={() => approve(r.requestId)}
-                        style={{
-                          backgroundColor: '#28A745',
-                          color: 'white',
-                          padding: '5px 15px',
-                          border: 'none',
-                          borderRadius: 3,
-                          cursor: 'pointer',
-                          marginRight: 5
-                        }}
-                      >
-                        Approve
-                      </button>
-                      <button 
-                        onClick={() => reject(r.requestId)}
-                        style={{
-                          backgroundColor: '#DC3545',
-                          color: 'white',
-                          padding: '5px 15px',
-                          border: 'none',
-                          borderRadius: 3,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Reject
-                      </button>
-                    </>
-                  ) : (
-                    <span style={{ color: '#666' }}>No action needed</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="table-scroll">
+            <table className="staff-table nowrap-table">
+              <thead>
+                <tr><th>Requested</th><th>Product</th><th className="num">Qty</th><th className="num">In stock now</th><th>Requested by</th><th>Status</th><th className="staff-th-right">Actions</th></tr>
+              </thead>
+              <tbody>
+                {pageItems.map((r) => {
+                  const st = (r.status || "").toUpperCase();
+                  const have = stock[r.product?.productId] ?? 0;
+                  return (
+                    <tr key={r.requestId}>
+                      <td>{r.createdAt ? new Date(r.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : <span className="staff-cell-muted">—</span>}</td>
+                      <td><span className="staff-cell-strong">{r.product?.productName || "—"}</span>{r.product?.brand && <span className="cell-sub">{r.product.brand}</span>}</td>
+                      <td className="num">{r.requestedQuantity}</td>
+                      <td className="num"><span className={have < 5 ? "stock-low" : ""}>{have}</span></td>
+                      <td>{r.requestedBy?.fullName || r.requestedBy?.username || "—"}</td>
+                      <td><span className={`status-badge ${st.toLowerCase()}`}>{st.charAt(0) + st.slice(1).toLowerCase()}</span></td>
+                      <td className="staff-row-actions">
+                        {st === "PENDING" && (
+                          <>
+                            <button className="dashboard-btn-primary" disabled={busy === r.requestId} onClick={() => decide(r, true)}>Approve</button>
+                            <button className="dashboard-btn-delete" disabled={busy === r.requestId} onClick={() => decide(r, false)}>Reject</button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {rows.length === 0 && (
+                  <tr className="empty-row"><td colSpan="7">{status === "Pending" ? "No requests waiting for approval." : "No requests match your filters."}</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} total={total} onPage={setPage} />
+        </>
       )}
     </div>
   );

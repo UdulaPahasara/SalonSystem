@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,11 +22,7 @@ public class ReportService {
     @Autowired
     private TransactionRepository transactionRepository;
 
-    @Autowired
-    private Salon.SalonManagementSystem.repository.AppointmentRepository appointmentRepository;
 
-    @Autowired
-    private Salon.SalonManagementSystem.repository.SalonServiceRepository salonServiceRepository;
 
     public List<RevenueReportDTO> getRevenueReport(Integer branchId, LocalDateTime startDate, LocalDateTime endDate,
             String period) {
@@ -68,93 +65,48 @@ public class ReportService {
         return report;
     }
 
-    public List<TopItemDTO> getTopProducts(Integer branchId) {
-        List<Transaction> transactions;
-        if (branchId != null) {
-            transactions = transactionRepository.findByBranch_Id(branchId);
-        } else {
-            transactions = transactionRepository.findAll();
-        }
+    // Optional date range; null means "all time".
+    private List<Transaction> transactionsFor(Integer branchId, LocalDateTime start, LocalDateTime end) {
+        LocalDateTime from = start != null ? start : LocalDateTime.of(2000, 1, 1, 0, 0);
+        LocalDateTime to = end != null ? end : LocalDateTime.of(2100, 1, 1, 0, 0);
+        return branchId != null
+                ? transactionRepository.findByBranchAndDateRange(branchId, from, to)
+                : transactionRepository.findByDateRange(from, to);
+    }
 
-        Map<String, TopItemDTO> productMap = new HashMap<>();
+    public List<TopItemDTO> getTopProducts(Integer branchId, LocalDateTime start, LocalDateTime end) {
+        return topItems(transactionsFor(branchId, start, end),
+                item -> item.getProduct() != null ? item.getProduct().getProductName() : null);
+    }
 
+    // Services come from checkout lines so the figures match revenue (price at time of sale).
+    public List<TopItemDTO> getTopServices(Integer branchId, LocalDateTime start, LocalDateTime end) {
+        return topItems(transactionsFor(branchId, start, end),
+                item -> item.getService() != null ? item.getService().getName() : null);
+    }
+
+    private List<TopItemDTO> topItems(List<Transaction> transactions, Function<TransactionItem, String> nameOf) {
+        Map<String, TopItemDTO> byName = new HashMap<>();
         for (Transaction t : transactions) {
             if (t.getItems() == null)
                 continue;
             for (TransactionItem item : t.getItems()) {
-                // Assuming TransactionItem only holds Products for now based on service logic
-                if (item.getProduct() != null) {
-                    String productName = item.getProduct().getProductName();
-                    productMap.compute(productName, (k, v) -> {
-                        if (v == null) {
-                            // Calculate revenue for this item: unitPrice * qty
-                            BigDecimal itemTotal = item.getProduct().getUnitPrice()
-                                    .multiply(BigDecimal.valueOf(item.getQuantity()));
-                            return new TopItemDTO(k, (long) item.getQuantity(), itemTotal);
-                        } else {
-                            v.setQuantitySold(v.getQuantitySold() + item.getQuantity());
-                            BigDecimal itemTotal = item.getProduct().getUnitPrice()
-                                    .multiply(BigDecimal.valueOf(item.getQuantity()));
-                            v.setTotalRevenue(v.getTotalRevenue().add(itemTotal));
-                            return v;
-                        }
-                    });
-                }
-            }
-        }
-
-        return productMap.values().stream()
-                .sorted((a, b) -> b.getTotalRevenue().compareTo(a.getTotalRevenue()))
-                .limit(10)
-                .collect(Collectors.toList());
-    }
-
-    public List<TopItemDTO> getTopServices(Integer branchId) {
-        // Use AppointmentRepository for services
-        List<Salon.SalonManagementSystem.model.Appointment> appointments;
-        List<Salon.SalonManagementSystem.model.SalonService> allServices;
-
-        if (branchId != null) {
-            appointments = appointmentRepository.findByBranch_Id(branchId);
-            allServices = salonServiceRepository.findByBranch_Id(branchId);
-        } else {
-            appointments = appointmentRepository.findAll();
-            allServices = salonServiceRepository.findAll();
-        }
-
-        // Create a lookup map: "BranchId:ServiceName" -> Price
-        Map<String, BigDecimal> priceMap = new HashMap<>();
-        for (Salon.SalonManagementSystem.model.SalonService s : allServices) {
-            String key = s.getBranch().getId() + ":" + s.getName();
-            priceMap.put(key, s.getPrice());
-        }
-
-        Map<String, TopItemDTO> serviceMap = new HashMap<>();
-
-        for (Salon.SalonManagementSystem.model.Appointment appt : appointments) {
-            String status = appt.getStatus();
-            if ("COMPLETED".equalsIgnoreCase(status) || "PAID".equalsIgnoreCase(status)) {
-                String serviceName = appt.getServiceType();
-                if (serviceName == null)
+                String name = nameOf.apply(item);
+                if (name == null)
                     continue;
-
-                // Lookup price
-                String key = appt.getBranch().getId() + ":" + serviceName;
-                BigDecimal price = priceMap.getOrDefault(key, BigDecimal.ZERO);
-
-                serviceMap.compute(serviceName, (k, v) -> {
-                    if (v == null) {
-                        return new TopItemDTO(k, 1L, price);
-                    } else {
-                        v.setUsageCount(v.getUsageCount() + 1);
-                        v.setTotalRevenue(v.getTotalRevenue().add(price));
-                        return v;
-                    }
+                BigDecimal price = item.getUnitPrice() != null ? item.getUnitPrice()
+                        : item.getProduct() != null ? item.getProduct().getUnitPrice()
+                                : item.getService() != null ? item.getService().getPrice() : BigDecimal.ZERO;
+                long qty = item.getQuantity() == null ? 1 : item.getQuantity();
+                byName.merge(name, new TopItemDTO(name, qty, price.multiply(BigDecimal.valueOf(qty))), (a, b) -> {
+                    a.setQuantitySold(a.getQuantitySold() + b.getQuantitySold());
+                    a.setUsageCount(a.getUsageCount() + b.getUsageCount());
+                    a.setTotalRevenue(a.getTotalRevenue().add(b.getTotalRevenue()));
+                    return a;
                 });
             }
         }
-
-        return serviceMap.values().stream()
+        return byName.values().stream()
                 .sorted((a, b) -> b.getTotalRevenue().compareTo(a.getTotalRevenue()))
                 .limit(10)
                 .collect(Collectors.toList());
