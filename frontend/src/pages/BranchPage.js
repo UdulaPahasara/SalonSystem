@@ -89,7 +89,7 @@ export default function BranchPage() {
       toast.success("Branch deleted.");
       load();
     } catch (err) {
-      toast.error("This branch can't be deleted while it still has staff, services or records.");
+      toast.error(typeof err.response?.data === "string" && err.response.data ? err.response.data : "This branch can't be deleted while it still has staff, services or records.");
     }
   };
 
