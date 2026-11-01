@@ -4,6 +4,7 @@ import { getInventoryByBranch } from "../api/productApi";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import { getStaffHomePath } from "../utils/staffNav";
 import { rs } from "../utils/format";
 import "../components/DashboardLayout.css";
@@ -66,6 +67,8 @@ export default function AdminBranchInventory() {
       return !q || (i.productName || "").toLowerCase().includes(q);
     })
     .sort((a, b) => (a.productName || "").localeCompare(b.productName || ""));
+
+  const { page, setPage, pageItems, total: rowCount } = usePagination(rows, `${filter}|${query}|${branchId}`);
 
   const kpis = [
     { label: "Products", value: summary.products, hint: "Stocked at this branch" },
@@ -133,7 +136,7 @@ export default function AdminBranchInventory() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((i) => {
+            {pageItems.map((i) => {
               const state = stockState(i.quantity);
               return (
                 <tr key={i.inventoryId}>
@@ -149,6 +152,7 @@ export default function AdminBranchInventory() {
           </tbody>
         </table>
       )}
+      {!loading && inventory.length > 0 && <Pagination page={page} total={rowCount} onPage={setPage} />}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
 import { getRoleDisplayName } from "../utils/authRoutes";
 import PageHeader from "../components/staff/PageHeader";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import { useAuth } from "../context/AuthContext";
 import { getStaffHomePath } from "../utils/staffNav";
 import "../components/DashboardLayout.css";
@@ -182,6 +183,8 @@ export default function AdminUsersPage() {
     (u) => selectedRole === "All" || getRoleDisplayName(u.roleName) === selectedRole
   );
 
+  const { page, setPage, pageItems } = usePagination(visibleUsers, `${selectedRole}|${selectedBranchId}`);
+
   return (
     <div className="staff-page">
       <PageHeader
@@ -237,7 +240,7 @@ export default function AdminUsersPage() {
           </tr>
         </thead>
         <tbody>
-          {visibleUsers.map((u) => (
+          {pageItems.map((u) => (
             <tr key={u.id}>
               <td className="staff-cell-strong">{u.fullName || u.username}</td>
               <td className="staff-cell-muted">{u.username}</td>
@@ -256,6 +259,8 @@ export default function AdminUsersPage() {
           )}
         </tbody>
       </table>
+
+      <Pagination page={page} total={visibleUsers.length} onPage={setPage} />
 
       {isModalOpen && (
         <div className="modal-overlay" onClick={closeModal}>
