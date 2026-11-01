@@ -1,50 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
-import { getRevenueReport, getTopProducts, getTopServices, getAllTransactions, getTransactionsByBranch } from "../api/usersApi";
 import { getBranches } from "../api/branchApi";
 import PageHeader from "../components/staff/PageHeader";
 import BarChart from "../components/staff/BarChart";
 import { getStaffHomePath } from "../utils/staffNav";
 import { rs } from "../utils/format";
+import { PRESETS, rangeFor, addDays, dateKey, fmtDate, loadReport, buildReportView } from "../utils/reportData";
+import ExportReportDialog from "../components/staff/ExportReportDialog";
 import "../components/DashboardLayout.css";
 import "../styles/Dashboard.css";
 import "../styles/StaffPages.css";
-
-const PRESETS = [
-  { id: "today", label: "Today" },
-  { id: "7", label: "Last 7 days" },
-  { id: "30", label: "Last 30 days" },
-  { id: "month", label: "This month" },
-  { id: "lastmonth", label: "Last month" },
-  { id: "year", label: "This year" },
-  { id: "custom", label: "Custom" },
-];
-
-const pad = (n) => String(n).padStart(2, "0");
-const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
-const endOfDay = (d) => { const x = new Date(d); x.setHours(23, 59, 59, 0); return x; };
-const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const isoLocal = (d) => `${dateKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-const fmtDate = (d) => d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-
-function rangeFor(preset, from, to) {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  switch (preset) {
-    case "today": return [startOfDay(now), endOfDay(now)];
-    case "7": return [startOfDay(addDays(now, -6)), endOfDay(now)];
-    case "30": return [startOfDay(addDays(now, -29)), endOfDay(now)];
-    case "month": return [new Date(y, m, 1), endOfDay(now)];
-    case "lastmonth": return [new Date(y, m - 1, 1), endOfDay(new Date(y, m, 0))];
-    case "year": return [new Date(y, 0, 1), endOfDay(now)];
-    default: return [startOfDay(new Date(`${from}T00:00:00`)), endOfDay(new Date(`${to}T00:00:00`))];
-  }
-}
-
-const sumBy = (rows, f) => rows.reduce((s, r) => s + Number(f(r) || 0), 0);
 
 function RankList({ rows, unit, empty }) {
   if (rows.length === 0) return <p className="dash-empty">{empty}</p>;
@@ -67,7 +32,6 @@ function RankList({ rows, unit, empty }) {
 
 export default function ReportsPage() {
   const { branchId: ownBranchId, userRole } = useAuth();
-  const toast = useToast();
   const isOwner = userRole === "Owner";
   const today = dateKey(new Date());
   const [preset, setPreset] = useState("30");
@@ -76,7 +40,7 @@ export default function ReportsPage() {
   const [branches, setBranches] = useState([]);
   const [branchId, setBranchId] = useState("");
   const [state, setState] = useState({ loading: true, error: false, data: null });
-  const [exporting, setExporting] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
 
   const target = isOwner ? branchId : String(ownBranchId || "");
   const validCustom = preset !== "custom" || (from && to && from <= to);
@@ -90,78 +54,13 @@ export default function ReportsPage() {
     if (!start) return undefined;
     let cancelled = false;
     setState((s) => ({ ...s, loading: true, error: false }));
-    const days = Math.round((end - start) / 864e5) + 1;
-    const monthly = days > 92;
-    const prevEnd = endOfDay(addDays(start, -1));
-    const prevStart = startOfDay(addDays(prevEnd, -(days - 1)));
-    const base = target ? { branchId: target } : {};
-    const range = { ...base, startDate: isoLocal(start), endDate: isoLocal(end) };
-
-    Promise.all([
-      getRevenueReport({ ...range, period: monthly ? "monthly" : "daily" }),
-      getRevenueReport({ ...base, startDate: isoLocal(prevStart), endDate: isoLocal(prevEnd), period: "monthly" }),
-      getTopServices(range),
-      getTopProducts(range),
-      target ? getTransactionsByBranch(target) : getAllTransactions(),
-    ])
-      .then(([revenue, prev, services, products, transactions]) => {
-        if (cancelled) return;
-        setState({ loading: false, error: false, data: { revenue, prev, services, products, monthly, days, transactions: transactions.filter((t) => { const d = new Date(t.dateTime); return d >= start && d <= end; }) } });
-      })
+    loadReport({ start, end, branchId: target })
+      .then((data) => !cancelled && setState({ loading: false, error: false, data }))
       .catch(() => !cancelled && setState({ loading: false, error: true, data: null }));
     return () => { cancelled = true; };
   }, [start, end, target]);
 
-  const view = useMemo(() => {
-    const d = state.data;
-    if (!d) return null;
-    const byLabel = new Map(d.revenue.map((r) => [r.label, r]));
-    const rows = [];
-    if (d.monthly) {
-      for (let c = new Date(start.getFullYear(), start.getMonth(), 1); c <= end; c = new Date(c.getFullYear(), c.getMonth() + 1, 1)) {
-        const key = `${c.getFullYear()}-${pad(c.getMonth() + 1)}`;
-        rows.push({ key, label: c.toLocaleDateString(undefined, { month: "short" }), tip: c.toLocaleDateString(undefined, { month: "long", year: "numeric" }), text: key, revenue: Number(byLabel.get(key)?.totalRevenue || 0), count: Number(byLabel.get(key)?.transactionCount || 0) });
-      }
-    } else {
-      for (let c = startOfDay(start); c <= end; c = addDays(c, 1)) {
-        const key = dateKey(c);
-        rows.push({ key, label: d.days <= 7 ? c.toLocaleDateString(undefined, { weekday: "short" }) : String(c.getDate()), tip: c.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short", year: "numeric" }), text: key, revenue: Number(byLabel.get(key)?.totalRevenue || 0), count: Number(byLabel.get(key)?.transactionCount || 0) });
-      }
-    }
-    const total = sumBy(rows, (r) => r.revenue);
-    const count = sumBy(rows, (r) => r.count);
-    const prevTotal = sumBy(d.prev, (r) => r.totalRevenue);
-    const best = rows.reduce((b, r) => (r.revenue > (b?.revenue || 0) ? r : b), null);
-    const share = (v) => (total > 0 ? (Number(v) / total) * 100 : 0);
-    const mapItems = (list, qtyKey) => list.map((i) => ({ name: i.name, qty: Number(i[qtyKey] || 0), revenue: Number(i.totalRevenue || 0), share: share(i.totalRevenue) }));
-
-    const txTotal = sumBy(d.transactions, (t) => t.totalAmount);
-    const group = (keyOf, nameOf) => {
-      const map = new Map();
-      d.transactions.forEach((t) => {
-        const k = keyOf(t);
-        const cur = map.get(k) || { name: nameOf(t), count: 0, revenue: 0 };
-        cur.count += 1;
-        cur.revenue += Number(t.totalAmount || 0);
-        map.set(k, cur);
-      });
-      return [...map.values()].map((g) => ({ ...g, share: txTotal > 0 ? (g.revenue / txTotal) * 100 : 0 })).sort((a, b) => b.revenue - a.revenue);
-    };
-    const payments = group((t) => (t.paymentMethod || "").toUpperCase(), (t) => ((t.paymentMethod || "").toUpperCase() === "CARD" ? "Card" : "Cash")).map((p) => ({ ...p, method: p.name }));
-
-    let delta = "No sales in the previous period";
-    if (prevTotal > 0) {
-      const pct = ((total - prevTotal) / prevTotal) * 100;
-      delta = `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}% vs previous period`;
-    }
-    return {
-      rows, total, count, avg: count ? total / count : 0, best, delta,
-      services: mapItems(d.services, "usageCount"),
-      products: mapItems(d.products, "quantitySold"),
-      payments,
-      branchRows: group((t) => t.branch?.id, (t) => t.branch?.branchName || "Unknown"),
-    };
-  }, [state.data, start, end]);
+  const view = useMemo(() => (state.data ? buildReportView(state.data, start, end) : null), [state.data, start, end]);
 
   const branchName = isOwner ? (branchId ? branches.find((b) => String(b.id) === String(branchId))?.branchName || "Branch" : "All branches") : "Your branch";
   const periodLabel = start ? `${fmtDate(start)} - ${fmtDate(end)}` : "—";
@@ -172,29 +71,6 @@ export default function ReportsPage() {
     { label: state.data.monthly ? "Best month" : "Best day", value: view.best && view.best.revenue > 0 ? rs(view.best.revenue) : "—", hint: view.best && view.best.revenue > 0 ? view.best.tip : "No sales in this period" },
   ];
 
-  const download = async (kind) => {
-    if (!view) return;
-    setExporting(kind);
-    try {
-      const { exportReportExcel, exportReportPdf } = await import("../utils/reportExport");
-      const report = {
-        periodLabel, branchName, generatedAt: new Date().toLocaleString(),
-        kpis: kpis.map((k) => ({ label: k.label, value: k.value })),
-        revenueTitle: state.data.monthly ? "Month" : "Date",
-        revenueRows: view.rows.map((r) => ({ label: r.text, count: r.count, revenue: r.revenue })),
-        services: view.services, products: view.products, payments: view.payments,
-        branches: view.branchRows.map((b) => ({ name: b.name, count: b.count, revenue: b.revenue, share: b.share })),
-      };
-      await (kind === "excel" ? exportReportExcel(report) : exportReportPdf(report));
-      toast.success(kind === "excel" ? "Excel report downloaded." : "PDF report downloaded.");
-    } catch (err) {
-      console.error(err);
-      toast.error("Couldn't create the report file. Please try again.");
-    } finally {
-      setExporting("");
-    }
-  };
-
   const ready = !!view && !state.loading;
 
   return (
@@ -204,14 +80,9 @@ export default function ReportsPage() {
         subtitle="Sales performance for the period you choose."
         backTo={getStaffHomePath(userRole)}
         actions={
-          <>
-            <button className="staff-btn staff-btn-secondary" onClick={() => download("excel")} disabled={!ready || !!exporting}>
-              {exporting === "excel" ? "Preparing…" : "Download Excel"}
-            </button>
-            <button className="staff-btn staff-btn-primary" onClick={() => download("pdf")} disabled={!ready || !!exporting}>
-              {exporting === "pdf" ? "Preparing…" : "Download PDF"}
-            </button>
-          </>
+          <button className="staff-btn staff-btn-primary" onClick={() => setExportOpen(true)}>
+            Download report…
+          </button>
         }
       />
 
@@ -334,6 +205,15 @@ export default function ReportsPage() {
           </div>
           <p className="report-note">Figures are based on completed checkouts. Services and products show the price charged at the time of sale.</p>
         </>
+      )}
+      {exportOpen && (
+        <ExportReportDialog
+          onClose={() => setExportOpen(false)}
+          isOwner={isOwner}
+          branches={branches}
+          ownBranchId={ownBranchId}
+          initial={{ preset, from, to, branchId }}
+        />
       )}
     </div>
   );
