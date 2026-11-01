@@ -1,6 +1,9 @@
 package Salon.SalonManagementSystem.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "transaction_items")
@@ -10,6 +13,7 @@ public class TransactionItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "transaction_id", nullable = false)
     private Transaction transaction;
@@ -18,7 +22,14 @@ public class TransactionItem {
     @JoinColumn(name = "product_id")
     private Product product;
 
+    @ManyToOne
+    @JoinColumn(name = "service_id")
+    private SalonService service;
+
     private Integer quantity;
+
+    // price at time of sale, so later price changes don't rewrite old bills
+    private BigDecimal unitPrice;
 
     public Integer getId() {
         return id;
@@ -50,5 +61,21 @@ public class TransactionItem {
 
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
+    }
+
+    public SalonService getService() {
+        return service;
+    }
+
+    public void setService(SalonService service) {
+        this.service = service;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
     }
 }

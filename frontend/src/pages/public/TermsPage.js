@@ -1,11 +1,12 @@
 import React from "react";
 import PolicyPage from "./PolicyPage";
+import { SALON_INFO } from "../../utils/salonInfo";
 
 export default function TermsPage() {
   return (
     <PolicyPage title="Terms of Service">
       <p>
-        By visiting Lumière Salon or using our booking channels, you agree to these terms.
+        By visiting {SALON_INFO.name} or using our booking channels, you agree to these terms.
         Services are provided to clients who arrive on time with valid contact information.
       </p>
       <h4>Appointments</h4>

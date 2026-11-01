@@ -37,13 +37,13 @@ Default MySQL connection (override with env vars if needed):
 | MySQL user | root | `DB_USERNAME` |
 | MySQL password | root | `DB_PASSWORD` |
 
-Example for another machine:
+Set your MySQL login in a `.env` file (gitignored; `npm run start:api` and `npm run start:prod` load it automatically):
 
 ```bash
-export DB_USERNAME=myuser
-export DB_PASSWORD=mypassword
-npm run start:api
+cp .env.example .env   # then edit DB_USERNAME / DB_PASSWORD
 ```
+
+> **Access denied for user 'root'@'localhost'?** Your MySQL password differs from the default `root`. Set `DB_PASSWORD` in `.env` (leave it empty if your root user has no password, e.g. a fresh Homebrew MySQL install).
 
 **App login users** (for the UI) are **not** in `application.properties`. They are auto-created in the database by `DataSeeder.java` on first run:
 
@@ -76,7 +76,7 @@ Open: **http://localhost:8081/salon-app/**
 
 ## Public customer website
 
-Customers can browse the salon without logging in. The public site uses **Lumière Salon** branding (women's salon).
+Customers can browse the salon without logging in. The public site uses **Malroo Salon** branding (women's salon, Govinna Handiya, Ratiyelapaara — owner Dulanjili Madushani).
 
 | Page | URL |
 |------|-----|
@@ -99,6 +99,35 @@ Customers can browse the salon without logging in. The public site uses **Lumiè
 **Salon branding** (name, address, phone, hours): edit `frontend/src/utils/salonInfo.js`.
 
 **Dev UI:** `http://localhost:3000/salon-app/` — same routes as production.
+
+**Branch locations:** The Contact page lists every branch from `GET /salon-app/api/branches` with address, phone and opening hours.
+
+## Salon details
+
+| | |
+|---|---|
+| Name | Malroo Salon |
+| Owner | Dulanjili Madushani |
+| Address | Govinna Handiya, Ratiyelapaara, Sri Lanka |
+| Phone | +94 77 432 6785 |
+| Facebook | [Saloon Malroo](https://www.facebook.com/p/Saloon-Malroo-100075910615922/) |
+
+## Staff features by role
+
+| Role | Features |
+|------|----------|
+| Owner (Admin) | Staff users, branches, salary payments, inventory, billing history (all branches or one), revenue reports, appointment history |
+| Branch Manager | Branch services, stock request approval, branch stock, billing, branch revenue report, appointments |
+| Reception | Appointments, customers (search, register, update, delete), website enquiries |
+| Cashier | Point of Sale checkout, appointments, transaction history |
+| Product Manager | Products, inventory levels, stock requests and history |
+
+### Point of Sale (Cashier)
+
+Cashier → **Point of Sale**: add services and products, pick a customer (or walk-in), take **cash** (with change) or **card** payment, then **Print Receipt**.
+
+- `POST /salon-app/api/transactions/checkout` recalculates the bill from database prices (client totals are never trusted), saves each line's price at time of sale, and deducts product stock from the branch. Any error (e.g. not enough stock) rolls back the whole sale.
+- Products appear in the POS only after stock exists for the branch (Product Manager requests → Branch Manager approves).
 
 ## Development
 
@@ -124,15 +153,7 @@ Dev UI: **http://localhost:3000/salon-app/** (API calls proxy to port 8081; UI i
 
 > **Proxy error?** Start the backend first: `npm run start:api` in a separate terminal.
 
-## Default users
-
-| Username  | Password  | Role           |
-|-----------|-----------|----------------|
-| admin     | admin     | Owner          |
-| manager   | manager   | Branch Manager |
-| reception | reception | Reception      |
-| cashier   | cashier   | Cashier        |
-| pm        | pm        | Product Manager |
+> **Backend only:** `npm run start:api` skips the React build (`-Dskip.frontend.build=true`). Use the same flag with `./mvnw` when you don't need the UI embedded, e.g. `./mvnw compile -Dskip.frontend.build=true`.
 
 ## Project structure (single directory)
 

@@ -655,3 +655,25 @@
   }
   .staff-content { padding: 1rem; }
 }
+
+/* Point of Sale */
+.pos-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; align-items: start; }
+.pos-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.pos-row .staff-input { flex: 1; min-width: 0; }
+.pos-qty { width: 4.5rem; }
+.pos-radio { display: flex; align-items: center; gap: 0.35rem; font-weight: 500; color: inherit; }
+.pos-total { font-size: 1.3rem; font-weight: 700; color: #831843; }
+.pos-checkout { width: 100%; }
+.pos-error { color: #be123c; font-weight: 600; }
+.pos-receipt { margin-top: 1.25rem; max-width: 520px; }
+
+@media (max-width: 900px) {
+  .pos-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  body * { visibility: hidden; }
+  .pos-receipt, .pos-receipt * { visibility: visible; }
+  .pos-receipt { position: absolute; left: 0; top: 0; border: none; box-shadow: none; }
+  .pos-no-print { display: none; }
+}
