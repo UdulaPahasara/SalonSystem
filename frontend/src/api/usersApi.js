@@ -38,12 +38,9 @@ export const checkout = (payload) =>
 export const getRevenueReport = (params) =>
   api.get("/reports/revenue", { params }).then((r) => r.data);
 
-export const getTopProducts = (branchId) => {
-  const params = branchId ? { branchId } : {};
-  return api.get("/reports/top-products", { params }).then((r) => r.data);
-};
+// params: { branchId?, startDate?, endDate? } (dates as local ISO date-times)
+export const getTopProducts = (params = {}) =>
+  api.get("/reports/top-products", { params }).then((r) => r.data);
 
-export const getTopServices = (branchId) => {
-  const params = branchId ? { branchId } : {};
-  return api.get("/reports/top-services", { params }).then((r) => r.data);
-};
+export const getTopServices = (params = {}) =>
+  api.get("/reports/top-services", { params }).then((r) => r.data);
