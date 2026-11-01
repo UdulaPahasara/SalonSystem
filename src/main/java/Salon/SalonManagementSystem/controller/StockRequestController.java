@@ -3,6 +3,7 @@ package Salon.SalonManagementSystem.controller;
 import Salon.SalonManagementSystem.Dto.StockRequestCreateDTO;
 import Salon.SalonManagementSystem.model.StockRequest;
 import Salon.SalonManagementSystem.service.StockRequestService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,12 +35,20 @@ public class StockRequestController {
     }
 
     @PutMapping("/{id}/approve")
-    public StockRequest approve(@PathVariable Integer id) {
-        return service.approve(id);
+    public ResponseEntity<?> approve(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(service.approve(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}/reject")
-    public StockRequest reject(@PathVariable Integer id) {
-        return service.reject(id);
+    public ResponseEntity<?> reject(@PathVariable Integer id) {
+        try {
+            return ResponseEntity.ok(service.reject(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
