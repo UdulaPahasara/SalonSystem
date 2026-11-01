@@ -25,15 +25,27 @@ public class SalonServiceController {
         return ResponseEntity.ok(salonServiceRepository.findAll());
     }
 
+    private String validate(SalonService s) {
+        if (s.getName() == null || s.getName().isBlank()) return "Service name is required";
+        if (s.getPrice() == null || s.getPrice().signum() <= 0) return "Price must be greater than zero";
+        if (s.getDurationMins() == null || s.getDurationMins() <= 0) return "Duration must be greater than zero";
+        if (s.getBranch() == null) return "Branch is required";
+        return null;
+    }
+
     @PostMapping
-    public ResponseEntity<SalonService> create(@RequestBody SalonService service) {
+    public ResponseEntity<?> create(@RequestBody SalonService service) {
+        String problem = validate(service);
+        if (problem != null) return ResponseEntity.badRequest().body(problem);
         return ResponseEntity.ok(salonServiceRepository.save(service));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SalonService> update(@PathVariable Integer id, @RequestBody SalonService service) {
+    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody SalonService service) {
+        String problem = validate(service);
+        if (problem != null) return ResponseEntity.badRequest().body(problem);
         return salonServiceRepository.findById(id)
-                .map(existing -> {
+                .<ResponseEntity<?>>map(existing -> {
                     existing.setName(service.getName());
                     existing.setCategory(service.getCategory());
                     existing.setPrice(service.getPrice());
@@ -45,11 +57,15 @@ public class SalonServiceController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ResponseEntity<?> delete(@PathVariable Integer id) {
         if (!salonServiceRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
-        salonServiceRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        try {
+            salonServiceRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.status(409).body("This service appears in past sales and can't be deleted.");
+        }
     }
 }
