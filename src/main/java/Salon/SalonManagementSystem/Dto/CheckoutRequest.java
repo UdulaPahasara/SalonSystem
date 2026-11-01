@@ -7,6 +7,7 @@ public class CheckoutRequest {
     private Integer branchId;
     private Integer cashierId;
     private Integer customerId; // optional, walk-in when null
+    private Integer appointmentId; // optional: the booked visit being paid for
     private String paymentMethod; // CASH or CARD
     private List<Line> items;
 
@@ -54,6 +55,14 @@ public class CheckoutRequest {
 
     public void setCashierId(Integer cashierId) {
         this.cashierId = cashierId;
+    }
+
+    public Integer getAppointmentId() {
+        return appointmentId;
+    }
+
+    public void setAppointmentId(Integer appointmentId) {
+        this.appointmentId = appointmentId;
     }
 
     public Integer getCustomerId() {
