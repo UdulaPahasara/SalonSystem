@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { getAllAppointments, createAppointment, updateAppointment, deleteAppointment } from "../api/appointmentApi";
+import { useSearchParams } from "react-router-dom";
+import { getAllAppointments, createAppointment, updateAppointment, setAppointmentStatus } from "../api/appointmentApi";
+import { getServiceStaff } from "../api/staffApi";
 import { getAllCustomers } from "../api/customerApi";
 import { getServicesByBranch } from "../api/serviceApi";
 import { useAuth } from "../context/AuthContext";
@@ -16,7 +18,7 @@ import "../styles/StaffPages.css";
 
 const STATUSES = ["All", "Booked", "Completed", "Cancelled"];
 const APPT_PERIODS = [{ id: "upcoming", label: "Upcoming" }, ...PERIOD_OPTIONS];
-const EMPTY = { customerId: "", serviceType: "", date: "", time: "", applyLoyalty: false };
+const EMPTY = { customerId: "", serviceType: "", staffId: "", date: "", time: "", applyLoyalty: false };
 
 const pad = (n) => String(n).padStart(2, "0");
 const localDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -29,6 +31,8 @@ function AppointmentManagement() {
   const [appointments, setAppointments] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [services, setServices] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -40,11 +44,13 @@ function AppointmentManagement() {
 
   const loadData = async () => {
     try {
-      const [apptData, custData, serviceData] = await Promise.all([
+      const [apptData, custData, serviceData, staffData] = await Promise.all([
         getAllAppointments(branchId), // only this branch's bookings
         getAllCustomers(branchId),
         getServicesByBranch(branchId),
+        getServiceStaff(branchId).catch(() => []),
       ]);
+      setStaff(staffData);
       setAppointments(apptData);
       setCustomers(custData);
       setServices(serviceData);
@@ -89,6 +95,7 @@ function AppointmentManagement() {
       setForm({
         customerId: appt.customer ? appt.customer.customerId : "",
         serviceType: appt.serviceType,
+        staffId: appt.assignedStaff ? appt.assignedStaff.id : "",
         date: localDate(dt),
         time: `${pad(dt.getHours())}:${pad(dt.getMinutes())}`,
         applyLoyalty: appt.applyLoyalty || false,
@@ -99,6 +106,15 @@ function AppointmentManagement() {
     }
     setDialogOpen(true);
   };
+
+  // Dashboard "Book appointment" opens the dialog straight away (?new=1)
+  useEffect(() => {
+    if (searchParams.get("new")) {
+      openDialog();
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const closeDialog = () => {
     setDialogOpen(false);
@@ -111,7 +127,12 @@ function AppointmentManagement() {
     setSaving(true);
     try {
       if (editing) {
-        await updateAppointment(editing.appointmentId, { ...form, appointmentTime });
+        await updateAppointment(editing.appointmentId, {
+          serviceType: form.serviceType,
+          applyLoyalty: form.applyLoyalty,
+          appointmentTime,
+          ...(form.staffId ? { assignedStaff: { id: parseInt(form.staffId, 10) } } : {}),
+        });
         toast.success("Appointment updated.");
       } else {
         await createAppointment({
@@ -120,6 +141,7 @@ function AppointmentManagement() {
           appointmentTime,
           branchId,
           applyLoyalty: form.applyLoyalty,
+          ...(form.staffId ? { staffId: parseInt(form.staffId, 10) } : {}),
         });
         toast.success("Appointment booked.");
       }
@@ -133,18 +155,28 @@ function AppointmentManagement() {
   };
 
   const handleCancel = async (a) => {
-    const ok = await confirm(`Cancel ${a.customer ? a.customer.fullName + "'s" : "this"} ${a.serviceType} appointment?`, {
+    const ok = await confirm(`Cancel ${a.customer ? a.customer.fullName + "'s" : "this"} ${a.serviceType} appointment? It will stay in the history as cancelled.`, {
       title: "Cancel appointment",
       danger: true,
       confirmLabel: "Cancel appointment",
     });
     if (!ok) return;
     try {
-      await deleteAppointment(a.appointmentId);
+      await setAppointmentStatus(a.appointmentId, "CANCELLED"); // the booking stays in history
       toast.success("Appointment cancelled.");
       loadData();
     } catch (error) {
-      toast.error("Failed to cancel: " + (error.response?.data || error.message));
+      toast.error(typeof error.response?.data === "string" ? error.response.data : "Couldn't cancel the appointment.");
+    }
+  };
+
+  const handleComplete = async (a) => {
+    try {
+      await setAppointmentStatus(a.appointmentId, "COMPLETED");
+      toast.success("Marked as completed.");
+      loadData();
+    } catch (error) {
+      toast.error(typeof error.response?.data === "string" ? error.response.data : "Couldn't update the appointment.");
     }
   };
 
@@ -217,6 +249,7 @@ function AppointmentManagement() {
                       <td className="staff-row-actions">
                         {st === "BOOKED" && (
                           <>
+                            <button className="dashboard-btn-primary" onClick={() => handleComplete(a)}>Complete</button>
                             <button className="dashboard-btn-edit" onClick={() => openDialog(a)}>Reschedule</button>
                             <button className="dashboard-btn-delete" onClick={() => handleCancel(a)}>Cancel</button>
                           </>
@@ -257,6 +290,15 @@ function AppointmentManagement() {
                   <option value="">Select service</option>
                   {services.map((s) => (
                     <option key={s.serviceId} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="appt-staff">Stylist (optional)</label>
+                <select id="appt-staff" className="staff-input" value={form.staffId} onChange={(e) => setForm({ ...form, staffId: e.target.value })}>
+                  <option value="">Assign later</option>
+                  {staff.map((s) => (
+                    <option key={s.id} value={s.id}>{s.fullName} · {s.role}</option>
                   ))}
                 </select>
               </div>
