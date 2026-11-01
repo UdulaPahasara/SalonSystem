@@ -1,189 +1,208 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { getAllCustomers, createCustomer, updateCustomer, deleteCustomer } from "../api/customerApi";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
 import PageHeader from "../components/staff/PageHeader";
-import { getStaffHomePath } from "../utils/staffNav";
 import Pagination, { usePagination } from "../components/staff/Pagination";
+import { getStaffHomePath } from "../utils/staffNav";
 import "../components/DashboardLayout.css";
-import "./CustomerManagement.css";
+import "../styles/Dashboard.css";
+import "../styles/StaffPages.css";
 
-function CustomerManagement() {
-    const { branchId, userRole } = useAuth();
-    const toast = useToast();
-    const confirm = useConfirm();
-    const [customers, setCustomers] = useState([]);
-    const [newCustomer, setNewCustomer] = useState({ fullName: "", phone: "", email: "" });
-    const [loading, setLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [editingCustomer, setEditingCustomer] = useState(null); // For edit mode
+const EMPTY = { fullName: "", phone: "", email: "", loyaltyMember: false };
+const errorText = (err, fallback) => (typeof err.response?.data === "string" && err.response.data ? err.response.data : fallback);
 
-    useEffect(() => {
-        loadCustomers();
-    }, [branchId]);
+export default function CustomerManagement() {
+  const { branchId, userRole } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("All");
+  const [query, setQuery] = useState("");
+  const [dialog, setDialog] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(EMPTY);
+  const [saving, setSaving] = useState(false);
 
-    const loadCustomers = () => {
-        setLoading(true);
-        getAllCustomers(branchId)
-            .then(data => setCustomers(data))
-            .catch(err => console.error(err))
-            .finally(() => setLoading(false));
-    };
+  const load = () =>
+    getAllCustomers(branchId)
+      .then(setCustomers)
+      .catch(() => toast.error("Couldn't load customers."))
+      .finally(() => setLoading(false));
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branchId]);
 
-        // Phone Validation
-        const phoneRegex = /^\d{10}$/;
-        if (!phoneRegex.test(newCustomer.phone)) {
-            toast.error("Please enter a valid 10-digit phone number.");
-            return;
-        }
+  const openDialog = (c = null) => {
+    setEditing(c);
+    setForm(c ? { fullName: c.fullName, phone: c.phone, email: c.email || "", loyaltyMember: !!c.loyaltyMember } : EMPTY);
+    setDialog(true);
+  };
 
-        try {
-            if (editingCustomer) {
-                await updateCustomer(editingCustomer.customerId, newCustomer);
-                toast.success("Customer updated successfully!");
-                setEditingCustomer(null);
-            } else {
-                await createCustomer({ ...newCustomer, branchId });
-                toast.success("Customer added successfully!");
-            }
-            setNewCustomer({ fullName: "", phone: "", email: "" });
-            loadCustomers();
-        } catch (error) {
-            toast.error("Operation failed: " + (error.response?.data || error.message));
-        }
-    };
+  // Dashboard "Register customer" opens the dialog straight away (?new=1)
+  useEffect(() => {
+    if (searchParams.get("new")) {
+      openDialog();
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const handleEdit = (customer) => {
-        setEditingCustomer(customer);
-        setNewCustomer({
-            fullName: customer.fullName,
-            phone: customer.phone,
-            email: customer.email,
-            loyaltyMember: customer.loyaltyMember
-        });
-    };
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return customers
+      .filter((c) => (filter === "All" || c.loyaltyMember) && (!q || [c.fullName, c.phone, c.email].some((v) => (v || "").toLowerCase().includes(q))))
+      .sort((a, b) => a.fullName.localeCompare(b.fullName));
+  }, [customers, filter, query]);
+  const { page, setPage, pageItems, total } = usePagination(rows, `${filter}|${query}`);
 
-    const handleCancelEdit = () => {
-        setEditingCustomer(null);
-        setNewCustomer({ fullName: "", phone: "", email: "" });
-    };
+  const save = async (e) => {
+    e.preventDefault();
+    const phone = form.phone.replace(/\s|-/g, "");
+    if (!/^\d{10}$/.test(phone)) {
+      toast.error("Enter a 10-digit phone number, for example 0771234567.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = { fullName: form.fullName.trim(), phone, email: form.email.trim(), loyaltyMember: form.loyaltyMember };
+      if (editing) await updateCustomer(editing.customerId, payload);
+      else await createCustomer({ ...payload, branchId });
+      toast.success(editing ? "Customer updated." : "Customer registered.");
+      setDialog(false);
+      load();
+    } catch (err) {
+      toast.error(errorText(err, "Couldn't save the customer."));
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    const handleDelete = async (id) => {
-        const ok = await confirm("Are you sure you want to delete this customer?", { title: "Delete customer", danger: true, confirmLabel: "Delete" });
-        if (!ok) return;
-        try {
-            await deleteCustomer(id);
-            toast.success("Customer deleted.");
-            loadCustomers();
-        } catch (error) {
-            toast.error("Failed to delete: " + (error.response?.data || error.message));
-        }
-    };
+  const remove = async (c) => {
+    const ok = await confirm(`Delete ${c.fullName}? This cannot be undone.`, { title: "Delete customer", danger: true, confirmLabel: "Delete" });
+    if (!ok) return;
+    try {
+      await deleteCustomer(c.customerId);
+      toast.success("Customer deleted.");
+      load();
+    } catch (err) {
+      toast.error(errorText(err, "Couldn't delete the customer."));
+    }
+  };
 
-    const filteredCustomers = customers.filter(c =>
-        c.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.phone.includes(searchTerm)
-    );
+  const members = customers.filter((c) => c.loyaltyMember).length;
+  const kpis = [
+    { label: "Customers", value: customers.length, hint: "Registered at your branch" },
+    { label: "Loyalty members", value: members, hint: customers.length ? `${Math.round((members / customers.length) * 100)}% of customers` : "—" },
+    { label: "Loyalty points", value: customers.reduce((s, c) => s + Number(c.loyaltyPoints || 0), 0).toLocaleString(), hint: "Held by members" },
+  ];
 
-    const { page, setPage, pageItems: pageCustomers, total: customerTotal } = usePagination(filteredCustomers, searchTerm);
+  return (
+    <div className="staff-page">
+      <PageHeader
+        title="Customers"
+        subtitle="Client records for your branch."
+        backTo={getStaffHomePath(userRole)}
+        actions={<button className="staff-btn staff-btn-primary" onClick={() => openDialog()}>+ Register Customer</button>}
+      />
 
-    return (
-        <div className="staff-page customer-mgmt-container">
-            <PageHeader title="Customer Management" backTo={getStaffHomePath(userRole)} />
+      <section className="dash-kpis staff-kpis" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }} aria-label="Customer summary">
+        {kpis.map((k) => (
+          <article key={k.label} className="dash-kpi">
+            <p className="dash-kpi-label">{k.label}</p>
+            <p className="dash-kpi-value">{loading ? "…" : k.value}</p>
+            <p className="dash-kpi-hint">{k.hint}</p>
+          </article>
+        ))}
+      </section>
 
-            <div className="customer-forms">
-                <div className="add-customer-card">
-                    <h3>{editingCustomer ? "Edit Customer" : "Add New Customer"}</h3>
-                    <form onSubmit={handleSubmit}>
-                        <input
-                            type="text"
-                            placeholder="Full Name"
-                            value={newCustomer.fullName}
-                            onChange={e => setNewCustomer({ ...newCustomer, fullName: e.target.value })}
-                            required
-                        />
-                        <input
-                            type="text"
-                            placeholder="Phone Number"
-                            value={newCustomer.phone}
-                            onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                            required
-                        />
-                        <input
-                            type="email"
-                            placeholder="Email (Optional)"
-                            value={newCustomer.email}
-                            onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                        />
+      <div className="staff-filter-bar">
+        <div className="staff-filter-group">
+          <div className="staff-chips" role="group" aria-label="Filter customers">
+            {["All", "Loyalty members"].map((f) => (
+              <button key={f} type="button" className={`staff-chip${filter === f ? " active" : ""}`} aria-pressed={filter === f} onClick={() => setFilter(f)}>{f}</button>
+            ))}
+          </div>
+          <input className="staff-input staff-search" type="search" placeholder="Search name, phone or email" aria-label="Search customers" value={query} onChange={(e) => setQuery(e.target.value)} />
+        </div>
+      </div>
 
-                        <div className="form-group-checkbox" style={{ marginBottom: '10px' }}>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={newCustomer.loyaltyMember || false}
-                                    onChange={e => setNewCustomer({ ...newCustomer, loyaltyMember: e.target.checked })}
-                                />
-                                Loyalty Member
-                            </label>
-                        </div>
+      {loading ? (
+        <p>Loading customers...</p>
+      ) : customers.length === 0 ? (
+        <div className="staff-empty-state">
+          <h3>No customers yet</h3>
+          <p>Register your first client to start booking appointments.</p>
+          <button className="staff-btn staff-btn-primary" onClick={() => openDialog()}>+ Register Customer</button>
+        </div>
+      ) : (
+        <>
+          <div className="table-scroll">
+            <table className="staff-table nowrap-table">
+              <thead>
+                <tr><th>Customer</th><th>Phone</th><th>Loyalty</th><th className="staff-th-right">Actions</th></tr>
+              </thead>
+              <tbody>
+                {pageItems.map((c) => (
+                  <tr key={c.customerId}>
+                    <td>
+                      <span className="staff-cell-strong">{c.fullName}</span>
+                      {c.email && <span className="cell-sub">{c.email}</span>}
+                    </td>
+                    <td>{c.phone}</td>
+                    <td>
+                      {c.loyaltyMember ? <><span className="status-badge loyalty" style={{ marginLeft: 0 }}>Member</span> <span className="staff-cell-muted">{c.loyaltyPoints} pts</span></> : <span className="staff-cell-muted">—</span>}
+                    </td>
+                    <td className="staff-row-actions">
+                      <Link className="dashboard-btn-primary" style={{ textDecoration: "none" }} to={`/reception/appointments?new=1&customer=${c.customerId}`}>Book</Link>
+                      <button className="dashboard-btn-edit" onClick={() => openDialog(c)}>Edit</button>
+                      <button className="dashboard-btn-delete" onClick={() => remove(c)}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+                {rows.length === 0 && <tr className="empty-row"><td colSpan="4">No customers match your filters.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} total={total} onPage={setPage} />
+        </>
+      )}
 
-                        <button type="submit" className={editingCustomer ? "edit-btn" : "add-btn"}>
-                            {editingCustomer ? "Update Customer" : "Add Customer"}
-                        </button>
-                        {editingCustomer && (
-                            <button type="button" onClick={handleCancelEdit} style={{ marginTop: '10px', backgroundColor: '#6c757d' }}>
-                                Cancel
-                            </button>
-                        )}
-                    </form>
-                </div>
-
-                <div className="customer-list-card">
-                    <h3>Customer List</h3>
-                    <input
-                        type="text"
-                        placeholder="Search by name or phone..."
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className="search-bar"
-                    />
-
-                    {loading ? <p>Loading...</p> : (
-                        <>
-                        <table className="customer-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Phone</th>
-                                    <th>Loyalty Member</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {pageCustomers.map(c => (
-                                    <tr key={c.customerId}>
-                                        <td>{c.fullName}</td>
-                                        <td>{c.phone}</td>
-                                        <td>{c.loyaltyMember ? "Yes" : "No"}</td>
-                                        <td>
-                                            <button onClick={() => handleEdit(c)} className="action-btn edit">Edit</button>
-                                            <button onClick={() => handleDelete(c.customerId)} className="action-btn delete">Delete</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        <Pagination page={page} total={customerTotal} onPage={setPage} />
-                        </>
-                    )}
-                </div>
-            </div >
-        </div >
-    );
+      {dialog && (
+        <div className="modal-overlay" onClick={() => setDialog(false)}>
+          <div className="modal-content" role="dialog" aria-modal="true" aria-labelledby="cust-title" onClick={(e) => e.stopPropagation()}>
+            <h3 id="cust-title">{editing ? "Edit customer" : "Register customer"}</h3>
+            <form onSubmit={save}>
+              <div className="form-group">
+                <label htmlFor="cust-name">Full name</label>
+                <input id="cust-name" className="staff-input" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} autoFocus required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="cust-phone">Phone (10 digits)</label>
+                <input id="cust-phone" type="tel" inputMode="numeric" className="staff-input" placeholder="0771234567" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label htmlFor="cust-email">Email (optional)</label>
+                <input id="cust-email" type="email" className="staff-input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <label className="form-check">
+                <input type="checkbox" checked={form.loyaltyMember} onChange={(e) => setForm({ ...form, loyaltyMember: e.target.checked })} />
+                Loyalty member
+              </label>
+              <div className="modal-actions">
+                <button type="button" className="staff-btn staff-btn-secondary" onClick={() => setDialog(false)}>Cancel</button>
+                <button type="submit" className="staff-btn staff-btn-primary" disabled={saving}>{saving ? "Saving…" : editing ? "Save changes" : "Register"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
-
-export default CustomerManagement;
