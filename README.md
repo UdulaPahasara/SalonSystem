@@ -57,6 +57,16 @@ cp .env.example .env   # then edit DB_USERNAME / DB_PASSWORD
 
 See **ARCHITECTURE.txt** section 11 for full database & credentials details.
 
+### Demo data (optional)
+
+To fill an empty system with realistic sample data (a second branch, staff, 18 customers, products and stock, stock requests, about 100 sales over 60 days, 38 appointments, salary history and website messages), start the backend once with:
+
+```bash
+SALON_SEED_DEMO_DATA=true npm run start:api
+```
+
+It is off by default and safe to repeat: it skips if demo customers (`@example.com`) already exist. The demo branch is named "… (Demo)" and a demo login `cashier2` is created with the shared staff password.
+
 ### Build
 
 From the project root:
