@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { getBranches } from "../api/branchApi";
 import PageHeader from "../components/staff/PageHeader";
 import BarChart from "../components/staff/BarChart";
@@ -70,6 +71,8 @@ export default function ReportsPage() {
   const [state, setState] = useState({ loading: true, error: false, data: null });
   const [exportOpen, setExportOpen] = useState(false);
   const [tab, setTab] = useState("overview");
+  const [saving, setSaving] = useState("");
+  const toast = useToast();
 
   const target = isOwner ? branchId : String(ownBranchId || "");
   const validCustom = preset !== "custom" || (from && to && from <= to);
@@ -96,6 +99,23 @@ export default function ReportsPage() {
   const ready = !!view && !state.loading;
   const sections = useMemo(() => (view ? buildSections(view, { isOwner, periodLabel }) : []), [view, isOwner, periodLabel]);
   const section = sections.find((x) => x.id === tab) || sections[0];
+
+  // Downloads just the tab on screen, using the numbers already loaded (same period and branch).
+  const downloadTab = async (format) => {
+    if (!section) return;
+    setSaving(format);
+    try {
+      const { exportReportExcel, exportReportPdf } = await import("../utils/reportExport");
+      const report = { periodLabel, branchName, generatedAt: new Date().toLocaleString(), sections: [section] };
+      await (format === "excel" ? exportReportExcel(report) : exportReportPdf(report));
+      toast.success(`${section.label} ${format === "excel" ? "Excel" : "PDF"} downloaded.`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't create the download. Please try again.");
+    } finally {
+      setSaving("");
+    }
+  };
 
   const kpis = view && [
     { label: "Total revenue", value: rs(view.total), hint: view.delta },
@@ -181,7 +201,13 @@ export default function ReportsPage() {
           {!ready && <p className="dash-empty">Loading…</p>}
           {ready && section && (
             <>
-              <p className="report-intro">{section.intro}</p>
+              <div className="report-tab-head">
+                <p className="report-intro">{section.intro}</p>
+                <div className="report-tab-actions" role="group" aria-label={`Download ${section.label}`}>
+                  <button type="button" className="staff-btn staff-btn-secondary" disabled={!!saving} onClick={() => downloadTab("excel")}>{saving === "excel" ? "Preparing…" : `${section.label}: Excel`}</button>
+                  <button type="button" className="staff-btn staff-btn-secondary" disabled={!!saving} onClick={() => downloadTab("pdf")}>{saving === "pdf" ? "Preparing…" : `${section.label}: PDF`}</button>
+                </div>
+              </div>
               {section.id === "overview" && (
                 <>
                   <section className="dash-card report-insights">

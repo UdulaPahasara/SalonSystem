@@ -129,3 +129,6 @@
 .report-table td:first-child { min-width: 11rem; }
 .report-table th, .report-table td { white-space: nowrap; }
 .report-table td.wrap { white-space: normal; min-width: 8rem; max-width: 24rem; }
+.report-tab-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; margin-bottom: 1rem; }
+.report-tab-head .report-intro { margin: 0; flex: 1 1 22rem; }
+.report-tab-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }

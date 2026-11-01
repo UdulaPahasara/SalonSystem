@@ -2,6 +2,11 @@ import { SALON_INFO } from "./salonInfo";
 import { formatCell, isNumeric, totalsRow } from "./reportTables";
 
 const stamp = () => new Date().toISOString().slice(0, 10);
+// One section -> "<section>-report-<date>"; several -> "business-report-<date>".
+const fileBase = (report) =>
+  report.sections.length === 1
+    ? `${report.sections[0].label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-report-${stamp()}`
+    : `business-report-${stamp()}`;
 const withTotals = (t) => (t.totals && t.rows.length ? [...t.rows, totalsRow(t)] : t.rows);
 
 /**
@@ -42,7 +47,7 @@ export async function exportReportExcel(report) {
     return { sheet: name, columns: Array.from({ length: Math.max(widest, 2) }, (_, i) => ({ width: i === 0 ? 34 : 18 })), data };
   });
 
-  await writeExcelFile(sheets).toFile(`business-report-${stamp()}.xlsx`);
+  await writeExcelFile(sheets).toFile(`${fileBase(report)}.xlsx`);
 }
 
 export async function exportReportPdf(report) {
@@ -60,7 +65,7 @@ export async function exportReportPdf(report) {
   doc.text(SALON_INFO.name, M, 46);
   doc.setFontSize(12);
   doc.setTextColor(...ROSE);
-  doc.text("BUSINESS REPORT", M, 64);
+  doc.text(report.sections.length === 1 ? `${report.sections[0].label.toUpperCase()} REPORT` : "BUSINESS REPORT", M, 64);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(90, 70, 80);
@@ -131,5 +136,5 @@ export async function exportReportPdf(report) {
     doc.text(`${SALON_INFO.name}  |  ${SALON_INFO.phone}`, M, H - 22);
     doc.text(`Page ${i} of ${pages}`, W - M, H - 22, { align: "right" });
   }
-  doc.save(`business-report-${stamp()}.pdf`);
+  doc.save(`${fileBase(report)}.pdf`);
 }
