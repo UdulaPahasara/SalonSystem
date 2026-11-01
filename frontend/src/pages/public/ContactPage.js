@@ -37,7 +37,12 @@ export default function ContactPage() {
       setSubmitted(true);
       setForm(INITIAL_FORM);
     } catch (err) {
-      setError("Could not send your message. Please try again or call us directly.");
+      const reason = err.response?.data;
+      setError(
+        [400, 429].includes(err.response?.status) && typeof reason === "string" && reason
+          ? reason
+          : "Could not send your message. Please try again or call us directly."
+      );
       console.error(err);
     } finally {
       setLoading(false);
@@ -75,9 +80,11 @@ export default function ContactPage() {
         </article>
         <article className="contact-card">
           <h4>Opening Hours</h4>
-          {SALON_INFO.hours.map((line) => (
-            <p key={line}>{line}</p>
-          ))}
+          {SALON_INFO.hours.length ? (
+            SALON_INFO.hours.map((line) => <p key={line}>{line}</p>)
+          ) : (
+            <p>Please <a href={SALON_INFO.phoneHref}>call {SALON_INFO.phone}</a> to confirm our opening hours.</p>
+          )}
         </article>
       </section>
 
@@ -94,9 +101,6 @@ export default function ContactPage() {
                     <a href={`tel:${b.phone.replace(/\s/g, "")}`}>{b.phone}</a>
                   </p>
                 )}
-                {SALON_INFO.hours.map((line) => (
-                  <p key={line}>{line}</p>
-                ))}
               </article>
             ))}
           </div>
@@ -121,6 +125,7 @@ export default function ContactPage() {
             <input
               type="text"
               name="name"
+              maxLength={100}
               value={form.name}
               onChange={handleChange}
               placeholder="Your name"
@@ -133,6 +138,7 @@ export default function ContactPage() {
             <input
               type="email"
               name="email"
+              maxLength={150}
               value={form.email}
               onChange={handleChange}
               placeholder="you@email.com"
@@ -145,6 +151,7 @@ export default function ContactPage() {
             <input
               type="tel"
               name="phone"
+              maxLength={30}
               value={form.phone}
               onChange={handleChange}
               placeholder="+94..."
@@ -156,6 +163,7 @@ export default function ContactPage() {
             <textarea
               name="message"
               rows="4"
+              maxLength={2000}
               value={form.message}
               onChange={handleChange}
               placeholder="How can we help you?"
