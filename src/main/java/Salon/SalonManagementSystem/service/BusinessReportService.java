@@ -35,6 +35,7 @@ public class BusinessReportService {
     @Autowired private SalaryService salaryService;
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
     public Map<String, Object> build(Integer branchId, LocalDateTime start, LocalDateTime end, boolean monthly, boolean includeCosts) {
         long days = ChronoUnit.DAYS.between(start.toLocalDate(), end.toLocalDate()) + 1;
         LocalDateTime prevEnd = start.toLocalDate().minusDays(1).atTime(23, 59, 59);
@@ -76,10 +77,15 @@ public class BusinessReportService {
         List<Map<String, Object>> services = services(txs, prevTxs, revenue);
         out.put("services", services);
         out.put("categories", categories(txs, revenue));
-        List<Map<String, Object>> inventory = inventory(branchId, txs);
+        Map<String, Object> salary = includeCosts ? salary(branchId, start, end, revenue) : null;
+        out.put("menu", menu(branchId, lines(txs)));
+        Map<String, Object> retail = retail(txs);
+        out.put("retail", retail);
+        out.put("heatmap", heatmap(txs));
+        List<Map<String, Object>> inventory = inventory(branchId, txs, days);
         out.put("products", products(txs, revenue, inventory));
         out.put("cashiers", cashiers(txs));
-        List<Map<String, Object>> branches = branchId == null ? branches(txs, prevTxs, appts, revenue) : List.of();
+        List<Map<String, Object>> branches = branchId == null ? branches(txs, prevTxs, appts, revenue, salary) : List.of();
         out.put("branches", branches);
         List<Map<String, Object>> staff = staff(branchId, appts);
         out.put("staff", staff);
@@ -91,9 +97,8 @@ public class BusinessReportService {
         stock.put("items", inventory);
         stock.put("requests", stockRequests(branchId, start, end));
         out.put("inventory", stock);
-        Map<String, Object> salary = includeCosts ? salary(branchId, start, end, revenue) : null;
         out.put("salary", salary);
-        out.put("insights", insights(summary, services, branches, staff, customers, appointments, stock, salary));
+        out.put("insights", insights(summary, services, (List<Map<String, Object>>) out.get("menu"), retail, branches, staff, customers, appointments, stock, salary));
         return out;
     }
 
@@ -219,7 +224,10 @@ public class BusinessReportService {
                 .sorted((a, b) -> Double.compare(D(b.get("revenue")), D(a.get("revenue")))).toList();
     }
 
-    private List<Map<String, Object>> branches(List<Transaction> txs, List<Transaction> prevTxs, List<Appointment> appts, double revenue) {
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> branches(List<Transaction> txs, List<Transaction> prevTxs, List<Appointment> appts, double revenue, Map<String, Object> salary) {
+        Map<String, Double> paid = new HashMap<>();
+        if (salary != null) ((List<Map<String, Object>>) salary.get("byBranch")).forEach(r -> paid.put((String) r.get("name"), D(r.get("amount"))));
         List<Map<String, Object>> out = new ArrayList<>();
         for (Branch b : branchRepo.findAll()) {
             List<Transaction> mine = txs.stream().filter(t -> t.getBranch() != null && t.getBranch().getId().equals(b.getId())).toList();
@@ -230,6 +238,11 @@ public class BusinessReportService {
             out.add(row("name", b.getBranchName(), "revenue", rev, "prevRevenue", prev, "change", change(rev, prev), "share", pct(rev, revenue),
                     "transactions", mine.size(), "avgBill", mine.isEmpty() ? 0 : rev / mine.size(),
                     "appointments", ba.size(), "completed", countStatus(ba, "COMPLETED"), "cancelled", cancelled, "cancelRate", pct(cancelled, ba.size())));
+            if (salary != null) {
+                double sal = paid.getOrDefault(b.getBranchName(), 0.0);
+                out.get(out.size() - 1).put("salaries", sal);
+                out.get(out.size() - 1).put("afterSalaries", rev - sal);
+            }
         }
         out.sort((a, b) -> Double.compare(D(b.get("revenue")), D(a.get("revenue"))));
         return out;
@@ -238,6 +251,10 @@ public class BusinessReportService {
     private List<Map<String, Object>> staff(Integer branchId, List<Appointment> appts) {
         Map<String, Double> price = new HashMap<>();
         serviceRepo.findAll().forEach(s -> { if (s.getBranch() != null && s.getPrice() != null) price.put(s.getBranch().getId() + "|" + s.getName(), s.getPrice().doubleValue()); });
+        Map<String, Integer> minutes = new HashMap<>();
+        serviceRepo.findAll().forEach(sv -> { if (sv.getBranch() != null && sv.getDurationMins() != null) minutes.put(sv.getBranch().getId() + "|" + sv.getName(), sv.getDurationMins()); });
+        java.util.function.Function<List<Appointment>, Double> hours = list -> list.stream().filter(a -> !"CANCELLED".equals(status(a)) && a.getBranch() != null)
+                .mapToInt(a -> minutes.getOrDefault(a.getBranch().getId() + "|" + a.getServiceType(), 0)).sum() / 60.0;
         List<Map<String, Object>> out = new ArrayList<>();
         for (ServiceStaff s : branchId == null ? staffRepo.findAll() : staffRepo.findByBranchId(branchId)) {
             List<Appointment> mine = appts.stream().filter(a -> a.getAssignedStaff() != null && a.getAssignedStaff().getId().equals(s.getId())).toList();
@@ -246,13 +263,13 @@ public class BusinessReportService {
                     .mapToDouble(a -> price.getOrDefault(a.getBranch().getId() + "|" + a.getServiceType(), 0.0)).sum();
             out.add(row("name", s.getFullName(), "role", s.getRole(), "branch", s.getBranch() == null ? "" : s.getBranch().getBranchName(),
                     "appointments", mine.size(), "completed", done, "cancelled", cancelled,
-                    "completionRate", pct(done, mine.size()), "revenue", value));
+                    "completionRate", pct(done, mine.size()), "revenue", value, "bookedHours", hours.apply(mine)));
         }
         List<Appointment> loose = appts.stream().filter(a -> a.getAssignedStaff() == null).toList();
         if (!loose.isEmpty()) {
             long done = countStatus(loose, "COMPLETED");
             out.add(row("name", "No stylist assigned", "role", "-", "branch", "-", "appointments", loose.size(), "completed", done,
-                    "cancelled", countStatus(loose, "CANCELLED"), "completionRate", pct(done, loose.size()), "revenue", 0.0));
+                    "cancelled", countStatus(loose, "CANCELLED"), "completionRate", pct(done, loose.size()), "revenue", 0.0, "bookedHours", hours.apply(loose)));
         }
         out.sort((a, b) -> Double.compare(D(b.get("revenue")), D(a.get("revenue"))));
         return out;
@@ -272,6 +289,8 @@ public class BusinessReportService {
         long fresh = mine.keySet().stream().filter(id -> span.containsKey(id) && !span.get(id)[0].isBefore(start)).count();
         long repeaters = mine.keySet().stream().filter(id -> visitCount.getOrDefault(id, 0L) >= 2).count();
         long walkIns = txs.stream().filter(t -> t.getCustomer() == null).count();
+        double gapDays = scope.stream().filter(c -> visitCount.getOrDefault(c.getCustomerId(), 0L) >= 2)
+                .mapToDouble(c -> (double) ChronoUnit.DAYS.between(span.get(c.getCustomerId())[0], span.get(c.getCustomerId())[1]) / (visitCount.get(c.getCustomerId()) - 1)).average().orElse(0);
         double memberRevenue = mine.values().stream().filter(l -> l.get(0).getCustomer().isLoyaltyMember()).mapToDouble(this::sum).sum();
         double knownRevenue = mine.values().stream().mapToDouble(this::sum).sum();
 
@@ -291,7 +310,18 @@ public class BusinessReportService {
         }
         lapsed.sort(Comparator.comparing(m -> (String) m.get("lastVisit")));
 
-        return row("registered", scope.size(), "members", scope.stream().filter(Customer::isLoyaltyMember).count(),
+        double topShare = pct(top.stream().mapToDouble(m -> D(m.get("spent"))).sum(), revenue);
+        List<Map<String, Object>> segments = new ArrayList<>();
+        for (boolean member : new boolean[]{true, false}) {
+            List<List<Transaction>> group = mine.values().stream().filter(l -> l.get(0).getCustomer().isLoyaltyMember() == member).toList();
+            double rev = group.stream().mapToDouble(this::sum).sum();
+            long visits = group.stream().mapToLong(List::size).sum();
+            segments.add(row("name", member ? "Loyalty members" : "Registered, not in loyalty", "customers", group.size(), "visits", visits, "revenue", rev,
+                    "perCustomer", group.isEmpty() ? 0 : rev / group.size(), "visitsPerCustomer", group.isEmpty() ? 0 : (double) visits / group.size(), "avgBill", visits == 0 ? 0 : rev / visits));
+        }
+        double walkRev = revenue - knownRevenue;
+        segments.add(row("name", "Walk-in (no record)", "customers", 0, "visits", walkIns, "revenue", walkRev, "perCustomer", 0, "visitsPerCustomer", 0, "avgBill", walkIns == 0 ? 0 : walkRev / walkIns));
+        return row("registered", scope.size(), "avgGapDays", gapDays, "topShare", topShare, "segments", segments, "members", scope.stream().filter(Customer::isLoyaltyMember).count(),
                 "pointsOutstanding", scope.stream().mapToInt(Customer::getLoyaltyPoints).sum(),
                 "served", (long) mine.size(), "newCustomers", fresh, "returning", mine.size() - fresh, "repeatCustomers", repeaters, "walkInVisits", walkIns,
                 "memberRevenue", memberRevenue, "otherCustomerRevenue", knownRevenue - memberRevenue, "walkInRevenue", revenue - knownRevenue,
@@ -306,6 +336,7 @@ public class BusinessReportService {
             final int day = d;
             List<Transaction> t = txs.stream().filter(x -> x.getDateTime().getDayOfWeek().getValue() == day).toList();
             weekdays.add(row("name", names[d - 1], "appointments", appts.stream().filter(a -> a.getAppointmentTime().getDayOfWeek().getValue() == day).count(),
+                    "cancelled", appts.stream().filter(a -> a.getAppointmentTime().getDayOfWeek().getValue() == day && "CANCELLED".equals(status(a))).count(),
                     "transactions", t.size(), "revenue", sum(t)));
         }
         Map<Integer, long[]> hours = new TreeMap<>();
@@ -322,7 +353,71 @@ public class BusinessReportService {
                 "weekdays", weekdays, "hours", byHour, "services", byService);
     }
 
-    private List<Map<String, Object>> inventory(Integer branchId, List<Transaction> txs) {
+    /** The service menu judged on how often it sells and how much it earns, with a suggested action for each. */
+    private List<Map<String, Object>> menu(Integer branchId, List<TransactionItem> items) {
+        Map<String, SalonService> offered = new LinkedHashMap<>();
+        (branchId == null ? serviceRepo.findAll() : serviceRepo.findByBranch_Id(branchId)).forEach(sv -> offered.putIfAbsent(sv.getName(), sv));
+        Map<String, List<TransactionItem>> sold = items.stream().filter(i -> i.getService() != null).collect(Collectors.groupingBy(i -> i.getService().getName()));
+        if (sold.isEmpty() || offered.isEmpty()) return List.of();
+        Function<String, Integer> qtyOf = n -> sold.getOrDefault(n, List.of()).stream().mapToInt(TransactionItem::getQuantity).sum();
+        Function<String, Double> revOf = n -> sold.getOrDefault(n, List.of()).stream().mapToDouble(this::line).sum();
+        double avgQty = offered.keySet().stream().mapToInt(qtyOf::apply).average().orElse(0);
+        double avgRev = offered.keySet().stream().mapToDouble(revOf::apply).average().orElse(0);
+        List<Map<String, Object>> out = new ArrayList<>();
+        offered.forEach((name, sv) -> {
+            int qty = qtyOf.apply(name);
+            double rev = revOf.apply(name);
+            boolean popular = qty > 0 && qty >= avgQty, valuable = rev > 0 && rev >= avgRev;
+            String kind, action;
+            if (popular && valuable) { kind = "Star"; action = "Your best earners. Keep them in front and make sure staff are free for them."; }
+            else if (popular) { kind = "Busy, low earning"; action = "Sells often but earns little. Try a small price rise or offer an add-on."; }
+            else if (valuable) { kind = "High earner, few buyers"; action = "Earns well per sale but few customers choose it. Promote it to regulars."; }
+            else if (qty == 0) { kind = "Not selling"; action = "Not sold in this period. Promote it, bundle it or remove it from the menu."; }
+            else { kind = "Weak"; action = "Low sales and low earnings. Bundle it with a popular service or promote it."; }
+            double price = sv.getPrice() == null ? 0 : sv.getPrice().doubleValue();
+            int mins = sv.getDurationMins() == null ? 0 : sv.getDurationMins();
+            out.add(row("name", name, "category", sv.getCategory() == null ? "Other" : sv.getCategory(), "price", price, "mins", mins,
+                    "perHour", mins > 0 ? price * 60 / mins : 0, "qty", qty, "revenue", rev, "kind", kind, "action", action));
+        });
+        out.sort((a, b) -> Double.compare(D(b.get("revenue")), D(a.get("revenue"))));
+        return out;
+    }
+
+    /** How often a visit for a service also sells a product, and what a better rate would be worth. */
+    private Map<String, Object> retail(List<Transaction> txs) {
+        List<Transaction> withService = txs.stream().filter(t -> t.getItems().stream().anyMatch(i -> i.getService() != null)).toList();
+        List<Transaction> attached = withService.stream().filter(t -> t.getItems().stream().anyMatch(i -> i.getProduct() != null)).toList();
+        double attachedSpend = attached.stream().flatMap(t -> t.getItems().stream()).filter(i -> i.getProduct() != null).mapToDouble(this::line).sum();
+        double avgSpend = attached.isEmpty() ? 0 : attachedSpend / attached.size();
+        long items = txs.stream().flatMap(t -> t.getItems().stream()).mapToLong(TransactionItem::getQuantity).sum();
+        long productOnly = txs.stream().filter(t -> t.getItems().stream().noneMatch(i -> i.getService() != null)).count();
+        return row("serviceVisits", withService.size(), "withProduct", attached.size(), "attachRate", pct(attached.size(), withService.size()),
+                "avgProductSpend", avgSpend, "avgItems", txs.isEmpty() ? 0 : (double) items / txs.size(), "productOnly", productOnly,
+                "tenPointGain", 0.10 * withService.size() * avgSpend);
+    }
+
+    /** Sales per weekday and hour, to see when the salon is busy. */
+    private Map<String, Object> heatmap(List<Transaction> txs) {
+        TreeSet<Integer> hours = new TreeSet<>();
+        txs.forEach(t -> hours.add(t.getDateTime().getHour()));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        String bestDay = null; int bestHour = 0; long best = 0;
+        for (DayOfWeek d : DayOfWeek.values()) {
+            Map<String, Object> r = new LinkedHashMap<>();
+            String name = d.getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+            r.put("name", name);
+            for (int h : hours) {
+                long n = txs.stream().filter(t -> t.getDateTime().getDayOfWeek() == d && t.getDateTime().getHour() == h).count();
+                r.put(String.format("%02d:00", h), n);
+                if (n > best) { best = n; bestDay = name; bestHour = h; }
+            }
+            rows.add(r);
+        }
+        return row("hours", hours.stream().map(h -> String.format("%02d:00", h)).toList(), "rows", rows,
+                "peakDay", bestDay, "peakHour", String.format("%02d:00", bestHour), "peakCount", best);
+    }
+
+    private List<Map<String, Object>> inventory(Integer branchId, List<Transaction> txs, long days) {
         Map<String, Integer> sold = new HashMap<>();
         for (Transaction t : txs) for (TransactionItem i : t.getItems())
             if (i.getProduct() != null && t.getBranch() != null) sold.merge(t.getBranch().getId() + "|" + i.getProduct().getProductId(), i.getQuantity(), Integer::sum);
@@ -332,9 +427,12 @@ public class BusinessReportService {
             int qty = b.getQuantity() == null ? 0 : b.getQuantity();
             int limit = b.getLowStockLimit() == null ? 10 : b.getLowStockLimit();
             double unit = b.getProduct().getUnitPrice() == null ? 0 : b.getProduct().getUnitPrice().doubleValue();
+            int soldQty = sold.getOrDefault(b.getBranch().getId() + "|" + b.getProduct().getProductId(), 0);
+            double perDay = (double) soldQty / days;
             out.add(row("branch", b.getBranch().getBranchName(), "product", b.getProduct().getProductName(), "brand", b.getProduct().getBrand(),
                     "qty", qty, "limit", limit, "status", qty == 0 ? "OUT" : qty <= limit ? "LOW" : "OK", "value", qty * unit,
-                    "sold", sold.getOrDefault(b.getBranch().getId() + "|" + b.getProduct().getProductId(), 0)));
+                    "sold", soldQty, "daysLeft", perDay > 0 ? qty / perDay : null,
+                    "reorder", perDay > 0 ? (int) Math.max(0, Math.ceil(perDay * 30 - qty)) : 0));
         }
         List<String> order = List.of("OUT", "LOW", "OK");
         out.sort(Comparator.comparingInt((Map<String, Object> m) -> order.indexOf(m.get("status"))).thenComparing(m -> (String) m.get("product")));
@@ -366,7 +464,7 @@ public class BusinessReportService {
     // ---------- plain-language findings ----------
 
     @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> insights(Map<String, Object> summary, List<Map<String, Object>> services, List<Map<String, Object>> branches,
+    private List<Map<String, Object>> insights(Map<String, Object> summary, List<Map<String, Object>> services, List<Map<String, Object>> menu, Map<String, Object> retail, List<Map<String, Object>> branches,
                                                List<Map<String, Object>> staff, Map<String, Object> customers, Map<String, Object> appts,
                                                Map<String, Object> stock, Map<String, Object> salary) {
         List<Map<String, Object>> out = new ArrayList<>();
@@ -445,8 +543,35 @@ public class BusinessReportService {
             out.add(row("level", ratio > 60 ? "warn" : "info", "area", "Costs", "text", String.format("Salaries paid in this period were %s, which is %.0f%% of revenue, leaving %s.%s",
                     money(D(salary.get("total"))), ratio, money(D(salary.get("net"))), ratio > 60 ? " Salaries are taking most of the income, so review staffing against demand." : "")));
         }
+        // menu: what to promote, what to drop
+        if (menu.size() >= 4 && I(summary.get("transactions")) >= 10) {
+            List<Map<String, Object>> weak = menu.stream().filter(m -> "Not selling".equals(m.get("kind")) || "Weak".equals(m.get("kind"))).toList();
+            if (!weak.isEmpty()) out.add(row("level", "warn", "area", "Services", "text", weak.size() + " of " + menu.size() + " menu services sell less often and earn less than the average service (" + names(weak) + "). Bundle them with popular services, promote them or remove them."));
+            menu.stream().filter(m -> "High earner, few buyers".equals(m.get("kind"))).max(Comparator.comparingDouble(m -> D(m.get("perHour")))).ifPresent(m ->
+                    out.add(row("level", "good", "area", "Services", "text", String.format("%s earns %s per hour of stylist time but only sold %d times. Promoting it could lift income without extra opening hours.", m.get("name"), money(D(m.get("perHour"))), I(m.get("qty"))))));
+        }
+        // retail attach rate
+        if (L(retail.get("serviceVisits")) >= 10 && D(retail.get("attachRate")) < 30) {
+            out.add(row("level", "warn", "area", "Retail", "text", String.format("Only %.0f%% of service visits also bought a product. If that rose by 10 points, sales would grow by about %s. Ask cashiers to suggest a product that suits the service.", D(retail.get("attachRate")), money(D(retail.get("tenPointGain"))))));
+        }
+        // members vs others
+        List<Map<String, Object>> segs = (List<Map<String, Object>>) customers.get("segments");
+        Map<String, Object> mem = segs.get(0), non = segs.get(1);
+        if (L(mem.get("customers")) >= 2 && L(non.get("customers")) >= 2 && D(non.get("perCustomer")) > 0 && D(mem.get("perCustomer")) >= D(non.get("perCustomer")) * 1.15) {
+            out.add(row("level", "good", "area", "Customers", "text", String.format("Loyalty members spend %.0f%% more per customer than other registered customers (%s vs %s). Invite more customers to join.", (D(mem.get("perCustomer")) / D(non.get("perCustomer")) - 1) * 100, money(D(mem.get("perCustomer"))), money(D(non.get("perCustomer"))))));
+        }
+        if (L(customers.get("served")) >= 10 && D(customers.get("topShare")) >= 50) {
+            out.add(row("level", "info", "area", "Customers", "text", String.format("Your top 10 customers bring %.0f%% of sales. Look after them: losing a few would hurt.", D(customers.get("topShare")))));
+        }
+        // stock running out soon
+        List<Map<String, Object>> soon = ((List<Map<String, Object>>) stock.get("items")).stream()
+                .filter(i -> i.get("daysLeft") != null && I(i.get("qty")) > 0 && D(i.get("daysLeft")) < 7).toList();
+        if (!soon.isEmpty()) out.add(row("level", "warn", "area", "Stock", "text", soon.size() + " product line(s) will run out within a week at the current sales pace: " + soon.stream().limit(3).map(i -> i.get("product") + " (" + i.get("branch") + ", about " + Math.max(1, Math.round(D(i.get("daysLeft")))) + " days)").collect(Collectors.joining(", ")) + ". The Stock tab shows how much to reorder."));
+        // branch profit
+        branches.stream().filter(b -> b.get("afterSalaries") != null && D(b.get("afterSalaries")) < 0).forEach(b ->
+                out.add(row("level", "warn", "area", "Branches", "text", String.format("%s did not cover its salaries: sales %s against salaries %s.", b.get("name"), money(D(b.get("revenue"))), money(D(b.get("salaries")))))));
         out.sort(Comparator.comparingInt(m -> "warn".equals(m.get("level")) ? 0 : "good".equals(m.get("level")) ? 1 : 2));
-        return out.size() > 12 ? out.subList(0, 12) : out;
+        return out.size() > 14 ? out.subList(0, 14) : out;
     }
 
     private String names(List<Map<String, Object>> rows) {
