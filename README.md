@@ -174,12 +174,12 @@ Reports → pick a timeframe (or your own dates) and, as Owner, one branch or al
 | Tab | What it answers |
 |-----|-----------------|
 | Overview | Headline numbers and a plain-language list of findings ("revenue is down 12%", "Rose Nail Polish is out of stock") |
-| Sales | Revenue over time, by category, by payment method, by branch |
-| Services & products | What sells, what is growing or falling, stock left for best sellers |
-| Staff | Appointments, completion rate and booked value per stylist; sales per cashier |
-| Customers | New vs returning, loyalty members, top customers, customers to win back (no visit in 60+ days) |
-| Appointments | Completed vs cancelled, busiest days and hours, most booked services |
-| Stock | Out-of-stock and low items, products that are not selling, stock request status |
+| Sales | Revenue over time, by category, by payment method, and by branch including what is left after each branch's salaries (Owner) |
+| Services & products | Service menu analysis (stars, busy but low earning, high earner with few buyers, weak, with a suggested action and earnings per hour), growth against the previous period, how often products are sold with services |
+| Staff | Appointments, completion rate, hours booked and booked value per stylist; sales per cashier |
+| Customers | New vs returning, typical days between visits, loyalty members compared with other customers, top customers, customers to win back (no visit in 60+ days) |
+| Appointments | Completed vs cancelled, busy-time heatmap (day by hour), most booked services |
+| Stock | Out-of-stock and low items, how many days the stock lasts at the current sales pace, how much to reorder, products that are not selling |
 | Salaries & profit | Salaries paid by month, branch and role, and what is left from sales (Owner only) |
 
 **Download report…** exports any of these tabs to Excel (a sheet per tab) or PDF. The API is `GET /salon-app/api/reports/business`; Managers can only request their own branch, and salary figures are only returned to the Owner. "Left after salaries" is before rent and other expenses, because salaries are the only cost the system records.
