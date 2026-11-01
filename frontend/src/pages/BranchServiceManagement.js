@@ -5,6 +5,7 @@ import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
 import PageHeader from "../components/staff/PageHeader";
 import { getStaffHomePath } from "../utils/staffNav";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import "../components/DashboardLayout.css";
 
 export default function BranchServiceManagement() {
@@ -12,6 +13,7 @@ export default function BranchServiceManagement() {
   const toast = useToast();
   const confirm = useConfirm();
   const [services, setServices] = useState([]);
+  const { page, setPage, pageItems } = usePagination(services);
   const [form, setForm] = useState({ name: "", category: "Hair Care", price: "", durationMins: "" });
   const [loading, setLoading] = useState(false);
 
@@ -111,6 +113,7 @@ export default function BranchServiceManagement() {
         {loading ? (
           <p>Loading...</p>
         ) : (
+          <>
           <table className="dashboard-table">
             <thead>
               <tr>
@@ -122,7 +125,7 @@ export default function BranchServiceManagement() {
               </tr>
             </thead>
             <tbody>
-              {services.map((s) => (
+              {pageItems.map((s) => (
                 <tr key={s.serviceId}>
                   <td>{s.category || "—"}</td>
                   <td>{s.name}</td>
@@ -137,6 +140,8 @@ export default function BranchServiceManagement() {
               ))}
             </tbody>
           </table>
+          <Pagination page={page} total={services.length} onPage={setPage} />
+          </>
         )}
       </div>
     </div>

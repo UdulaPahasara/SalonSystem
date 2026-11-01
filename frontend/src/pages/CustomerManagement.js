@@ -5,6 +5,7 @@ import { useToast } from "../context/ToastContext";
 import { useConfirm } from "../context/ConfirmContext";
 import PageHeader from "../components/staff/PageHeader";
 import { getStaffHomePath } from "../utils/staffNav";
+import Pagination, { usePagination } from "../components/staff/Pagination";
 import "../components/DashboardLayout.css";
 import "./CustomerManagement.css";
 
@@ -88,6 +89,8 @@ function CustomerManagement() {
         c.phone.includes(searchTerm)
     );
 
+    const { page, setPage, pageItems: pageCustomers, total: customerTotal } = usePagination(filteredCustomers, searchTerm);
+
     return (
         <div className="staff-page customer-mgmt-container">
             <PageHeader title="Customer Management" backTo={getStaffHomePath(userRole)} />
@@ -150,6 +153,7 @@ function CustomerManagement() {
                     />
 
                     {loading ? <p>Loading...</p> : (
+                        <>
                         <table className="customer-table">
                             <thead>
                                 <tr>
@@ -160,7 +164,7 @@ function CustomerManagement() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredCustomers.map(c => (
+                                {pageCustomers.map(c => (
                                     <tr key={c.customerId}>
                                         <td>{c.fullName}</td>
                                         <td>{c.phone}</td>
@@ -173,6 +177,8 @@ function CustomerManagement() {
                                 ))}
                             </tbody>
                         </table>
+                        <Pagination page={page} total={customerTotal} onPage={setPage} />
+                        </>
                     )}
                 </div>
             </div >
