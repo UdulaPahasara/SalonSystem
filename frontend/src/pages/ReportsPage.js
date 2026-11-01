@@ -16,6 +16,8 @@ const LEVEL = { warn: "Needs attention", good: "Good news", info: "Note" };
 
 function ReportTable({ table, chartOnly }) {
   const rows = table.totals && table.rows.length ? [...table.rows, totalsRow(table)] : table.rows;
+  const peak = table.heat ? Math.max(0, ...table.rows.flatMap((r) => table.columns.slice(1).map((c) => Number(r[c.key] || 0)))) : 0;
+  const heat = table.heat && peak > 0 ? (v) => { const x = Number(v || 0) / peak; return x > 0 ? { background: `rgba(169, 26, 88, ${(0.1 + 0.75 * x).toFixed(2)})`, color: x > 0.55 ? "#fff" : undefined } : undefined; } : null;
   const chartData = table.chartRows || table.rows;
   const chart = table.chart && chartData.length > 0 && (
     <BarChart
@@ -42,7 +44,7 @@ function ReportTable({ table, chartOnly }) {
               {rows.map((r, i) => (
                 <tr key={i} className={table.totals && i === rows.length - 1 ? "report-total-row" : undefined}>
                   {table.columns.map((c) => (
-                    <td key={c.key} className={isNumeric(c.type) ? "num" : undefined}>
+                    <td key={c.key} className={[isNumeric(c.type) ? "num" : "", c.wrap ? "wrap" : ""].join(" ").trim() || undefined} style={heat && isNumeric(c.type) ? heat(r[c.key]) : undefined}>
                       {c.type === "status" ? <span className={`status-badge ${String(r[c.key]).toLowerCase()}`}>{formatCell("status", r[c.key])}</span> : formatCell(c.type, r[c.key])}
                     </td>
                   ))}

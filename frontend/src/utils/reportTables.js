@@ -22,15 +22,17 @@ export const formatCell = (type, v) => {
     case "pct": return `${Number(v || 0).toFixed(1)}%`;
     case "change": return v == null ? "-" : `${v >= 0 ? "+" : ""}${Number(v).toFixed(1)}%`;
     case "status": return STATUS[v] || v;
+    case "dec": return Number(v || 0).toFixed(1);
+    case "days": return v == null ? "No sales yet" : v > 365 ? "Over a year" : `${Math.max(1, Math.round(v))} days`;
     case "yesno": return v ? "Yes" : "No";
     case "branch": return String(v ?? "").replace(/^Malroo Salon\s*[—-]\s*/, "");
     default: return v == null ? "" : String(v);
   }
 };
 
-export const isNumeric = (type) => ["int", "money", "pct", "change"].includes(type);
+export const isNumeric = (type) => ["int", "money", "pct", "change", "dec", "days"].includes(type);
 
-const col = (key, label, type = "text") => ({ key, label, type });
+const col = (key, label, type = "text", wrap = false) => ({ key, label, type, wrap });
 const kv = (rows) => rows.map(([name, value]) => ({ name, value }));
 
 /**
@@ -47,9 +49,10 @@ export function buildSections(view, { isOwner, periodLabel }) {
   const branchTable = view.branches.length > 1 && {
     id: "branches",
     title: "Branch comparison",
-    note: "Compare branches on sales, bill size and cancellations. A branch with a falling sales trend or high cancellations needs a closer look.",
+    note: "Compare branches on sales, bill size, cancellations and (for the Owner) whether sales cover that branch's salaries. A branch with falling sales, high cancellations or a negative balance needs a closer look.",
     columns: [col("name", "Branch", "branch"), col("revenue", "Revenue", "money"), col("share", "Share of sales", "pct"), col("change", "vs previous", "change"),
-      col("transactions", "Transactions", "int"), col("avgBill", "Average bill", "money"), col("appointments", "Appointments", "int"), col("cancelRate", "Cancelled", "pct")],
+      col("transactions", "Transactions", "int"), col("avgBill", "Average bill", "money"), col("appointments", "Appointments", "int"), col("cancelRate", "Cancelled", "pct"),
+      ...(view.salary ? [col("salaries", "Salaries paid", "money"), col("afterSalaries", "Left after salaries", "money")] : [])],
     rows: view.branches,
   };
 
@@ -107,8 +110,26 @@ export function buildSections(view, { isOwner, periodLabel }) {
       id: "services",
       tables: [
         {
+          id: "menu", title: "Service menu analysis",
+          note: "Each service is compared with the average service on your menu: Star = sells often and earns well; Busy, low earning = popular but small income; High earner = earns well but few buyers; Weak = neither. \"Earns per hour\" is price divided by how long the service takes.",
+          columns: [col("name", "Service", "text", true), col("perHour", "Earns per hour", "money"),
+            col("qty", "Times sold", "int"), col("revenue", "Revenue", "money"), col("kind", "Verdict", "text", true), col("action", "What to do", "text", true)],
+          rows: view.menu,
+        },
+        {
+          id: "retail", title: "Selling products with services", note: "Visits where the customer also bought a product are the easiest extra income: the customer is already at the till.",
+          columns: [col("name", "Measure"), col("value", "Value")],
+          rows: kv([
+            ["Visits that included a service", view.retail.serviceVisits],
+            ["Of those, also bought a product", `${view.retail.withProduct} (${view.retail.attachRate.toFixed(1)}%)`],
+            ["Average product spend when one is bought", rs(Math.round(view.retail.avgProductSpend))],
+            ["Average items per bill", view.retail.avgItems.toFixed(1)],
+            ["Extra sales if 10% more visits also bought a product", rs(Math.round(view.retail.tenPointGain))],
+          ]),
+        },
+        {
           id: "services", title: "Services sold", note: "Compared with the previous period of the same length. A big fall may mean a pricing, staffing or promotion problem; a big rise means demand to plan for.",
-          columns: [col("name", "Service"), col("category", "Category"), col("qty", "Times sold", "int"), col("revenue", "Revenue", "money"), col("share", "Share of sales", "pct"),
+          columns: [col("name", "Service"), col("qty", "Times sold", "int"), col("revenue", "Revenue", "money"), col("share", "Share of sales", "pct"),
             col("prevRevenue", "Previous period", "money"), col("change", "Change", "change")],
           rows: view.services,
         },
@@ -123,9 +144,9 @@ export function buildSections(view, { isOwner, periodLabel }) {
       id: "staff",
       tables: [
         {
-          id: "stylists", title: "Stylists and therapists", note: "Value is the menu price of completed appointments. Someone with no appointments may be under-used; many cancellations may point to a scheduling problem.",
+          id: "stylists", title: "Stylists and therapists", note: "Based on appointments only (walk-in sales are not linked to a stylist). Value is the menu price of completed appointments and hours are the booked service time. Someone with few hours may be under-used; many cancellations may point to a scheduling problem.",
           columns: [col("name", "Name"), col("role", "Role"), col("branch", "Branch", "branch"), col("appointments", "Appointments", "int"), col("completed", "Completed", "int"),
-            col("cancelled", "Cancelled", "int"), col("completionRate", "Completion rate", "pct"), col("revenue", "Value completed", "money")],
+            col("cancelled", "Cancelled", "int"), col("completionRate", "Completion rate", "pct"), col("bookedHours", "Hours booked", "dec"), col("revenue", "Value completed", "money")],
           rows: view.staff,
         },
         {
@@ -150,6 +171,8 @@ export function buildSections(view, { isOwner, periodLabel }) {
             ["Came before this period (returning)", c.returning],
             ["Have visited more than once (repeat)", c.repeatCustomers],
             ["Walk-in sales without a customer record", c.walkInVisits],
+            ["Typical days between visits (repeat customers)", c.avgGapDays > 0 ? c.avgGapDays.toFixed(0) : "-"],
+            ["Share of sales from the top 10 customers", `${c.topShare.toFixed(1)}%`],
           ]),
         },
         {
@@ -157,6 +180,12 @@ export function buildSections(view, { isOwner, periodLabel }) {
           columns: [col("name", "Customer type"), col("revenue", "Revenue", "money"), col("share", "Share of sales", "pct")],
           rows: [["Loyalty members", c.memberRevenue], ["Registered, not in loyalty", c.otherCustomerRevenue], ["Walk-in (no record)", c.walkInRevenue]]
             .map(([name, revenue]) => ({ name, revenue, share: s.revenue > 0 ? (revenue / s.revenue) * 100 : 0 })),
+        },
+        {
+          id: "segments", title: "Loyalty members compared with other customers", note: "Shows whether the loyalty programme is worth it: do members visit more often and spend more?",
+          columns: [col("name", "Group"), col("customers", "Customers", "int"), col("visits", "Visits", "int"), col("revenue", "Revenue", "money"),
+            col("perCustomer", "Spend per customer", "money"), col("visitsPerCustomer", "Visits per customer", "dec"), col("avgBill", "Average bill", "money")],
+          rows: c.segments,
         },
         {
           id: "top-customers", title: "Top customers", note: "Your most valuable customers in this period. Keep them happy.",
@@ -180,9 +209,15 @@ export function buildSections(view, { isOwner, periodLabel }) {
         },
         {
           id: "weekdays", title: "Busiest days of the week", note: "Roster more staff on the busiest days and run offers on the quietest.",
-          columns: [col("name", "Day"), col("appointments", "Appointments", "int"), col("transactions", "Sales", "int"), col("revenue", "Revenue", "money")],
+          columns: [col("name", "Day"), col("appointments", "Appointments", "int"), col("cancelled", "Cancelled", "int"), col("transactions", "Sales", "int"), col("revenue", "Revenue", "money")],
           rows: a.weekdays,
           chart: { labelKey: "name", valueKey: "revenue", tipKey: "name", caption: "Revenue by day of the week", short: true },
+        },
+        {
+          id: "heatmap", title: "When are we busiest? (sales by day and hour)", heat: true,
+          note: `Darker means more sales. ${view.heatmap.peakCount > 0 ? `The busiest slot is ${view.heatmap.peakDay} around ${view.heatmap.peakHour} (${view.heatmap.peakCount} sales). ` : ""}Put more staff on dark slots and run offers on pale ones.`,
+          columns: [col("name", "Day"), ...view.heatmap.hours.map((h) => col(h, h, "int"))],
+          rows: view.heatmap.rows,
         },
         {
           id: "hours", title: "Busiest hours of the day",
@@ -200,9 +235,9 @@ export function buildSections(view, { isOwner, periodLabel }) {
       id: "inventory",
       tables: [
         {
-          id: "stock", title: "Stock levels", note: "Out-of-stock and low items are listed first. Stock that is available but sold 0 in this period is not moving.",
+          id: "stock", title: "Stock levels", note: "Out-of-stock and low items come first. \"Stock lasts\" is how long the stock would last at the sales pace of this period, and \"Reorder\" is how many units would give about 30 days of sales. Stock that has not sold at all is not moving.",
           columns: [col("branch", "Branch", "branch"), col("product", "Product"), col("brand", "Brand"), col("qty", "In stock", "int"), col("limit", "Low-stock level", "int"),
-            col("status", "Status", "status"), col("value", "Stock value", "money"), col("sold", "Sold in period", "int")],
+            col("status", "Status", "status"), col("sold", "Sold in period", "int"), col("daysLeft", "Stock lasts", "days"), col("reorder", "Reorder for 30 days", "int"), col("value", "Stock value", "money")],
           rows: view.inventory.items,
         },
         {

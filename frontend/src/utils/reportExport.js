@@ -15,6 +15,7 @@ export async function exportReportExcel(report) {
     const b = bold ? { fontWeight: "bold" } : {};
     switch (type) {
       case "int": return { value: Number(v || 0), type: Number, format: "#,##0", ...b };
+      case "dec": return { value: Number(v || 0), type: Number, format: "#,##0.0", ...b };
       case "money": return { value: Number(v || 0), type: Number, format: "#,##0.00", ...b };
       case "pct": return { value: Number(v || 0) / 100, type: Number, format: "0.0%", ...b };
       case "change": return v == null ? { value: "-", ...b } : { value: Number(v) / 100, type: Number, format: "+0.0%;-0.0%", ...b };

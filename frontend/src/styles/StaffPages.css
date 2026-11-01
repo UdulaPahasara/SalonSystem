@@ -128,3 +128,4 @@
 .insight-good .insight-tag { color: #166534; }
 .report-table td:first-child { min-width: 11rem; }
 .report-table th, .report-table td { white-space: nowrap; }
+.report-table td.wrap { white-space: normal; min-width: 8rem; max-width: 24rem; }
