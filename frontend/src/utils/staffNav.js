@@ -37,7 +37,7 @@ export function getStaffNavItems(roleName) {
     "Product Manager": [
       { label: "Dashboard", path: "/pm-dashboard" },
       { label: "Products", path: "/pm/products" },
-      { label: "Inventory", path: "/pm/inventory" },
+      { label: "Branch Stock", path: "/pm/inventory" },
       { label: "Stock History", path: "/stock-request-history" },
     ],
     Cashier: [
