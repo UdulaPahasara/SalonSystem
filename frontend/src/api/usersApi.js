@@ -30,11 +30,12 @@ export const paySalary = (payload) =>
 export const updateBaseSalary = (payload) =>
   api.put("/salary/update-base", payload).then((r) => r.data);
 
-export const getAllTransactions = () =>
-  api.get("/transactions").then((r) => r.data);
+// range: optional { startDate, endDate } so screens fetch only the sales they need
+export const getAllTransactions = (range = {}) =>
+  api.get("/transactions", { params: range }).then((r) => r.data);
 
-export const getTransactionsByBranch = (branchId) =>
-  api.get(`/transactions/branch/${branchId}`).then((r) => r.data);
+export const getTransactionsByBranch = (branchId, range = {}) =>
+  api.get(`/transactions/branch/${branchId}`, { params: range }).then((r) => r.data);
 
 export const checkout = (payload) =>
   api.post("/transactions/checkout", payload).then((r) => r.data);
