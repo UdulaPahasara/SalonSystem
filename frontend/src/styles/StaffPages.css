@@ -61,3 +61,7 @@
 .rank-bar { flex: 0 0 38%; height: 6px; border-radius: 3px; background: #f0e8e2; overflow: hidden; }
 .rank-bar i { display: block; height: 100%; border-radius: 3px; background: #a91a58; }
 @media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } }
+
+/* Timeframe filter */
+.period-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; }
+.period-filter .staff-input { width: auto; }
