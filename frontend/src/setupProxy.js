@@ -8,7 +8,7 @@ module.exports = function (app) {
   app.use(
     "/salon-app/api",
     createProxyMiddleware({
-      target: "http://localhost:8081",
+      target: process.env.API_TARGET || "http://localhost:8081",
       changeOrigin: true,
     })
   );
