@@ -48,6 +48,8 @@
 }
 
 .login-visual-overlay h2 {
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(42, 7, 24, 0.55);
   margin: 0 0 0.75rem;
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(2rem, 4vw, 3rem);
