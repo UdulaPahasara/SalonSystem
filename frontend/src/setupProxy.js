@@ -10,6 +10,8 @@ module.exports = function (app) {
     createProxyMiddleware({
       target: process.env.API_TARGET || "http://localhost:8081",
       changeOrigin: true,
+      // The proxy makes API calls same-origin, so drop Origin to avoid a CORS check on other dev ports
+      onProxyReq: (proxyReq) => proxyReq.removeHeader("origin"),
     })
   );
 };
